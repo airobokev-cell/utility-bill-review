@@ -1,0 +1,228 @@
+/* ── Panel Designer ─────────────────────────────────────────────────── */
+#panel-designer-section {
+  margin-top: 32px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.designer-header {
+  padding: 20px 24px 0;
+}
+
+.designer-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.designer-header .designer-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+/* Metrics bar */
+.designer-metrics {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.metric-card {
+  flex: 1;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-align: center;
+}
+
+.metric-card .metric-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.metric-card .metric-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.metric-card .metric-unit {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.metric-card.highlight {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.metric-card.highlight .metric-value {
+  color: #16a34a;
+}
+
+/* Toolbar */
+.designer-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 0 24px 12px;
+  flex-wrap: wrap;
+}
+
+.designer-toolbar button {
+  padding: 8px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #334155;
+}
+
+.designer-toolbar button:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.designer-toolbar button.primary {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #3b82f6;
+}
+
+.designer-toolbar button.primary:hover {
+  background: #2563eb;
+}
+
+.designer-toolbar button.danger {
+  color: #dc2626;
+}
+
+.designer-toolbar button.danger:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.designer-toolbar button.success {
+  background: #15803d;
+  color: #fff;
+  border-color: #15803d;
+}
+
+.designer-toolbar button.success:hover {
+  background: #166534;
+}
+
+.designer-toolbar button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.designer-toolbar .spacer {
+  flex: 1;
+}
+
+/* Canvas container */
+.designer-canvas-container {
+  position: relative;
+  width: 100%;
+  background: #1a1a2e;
+  cursor: crosshair;
+}
+
+.designer-canvas-container .loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.85);
+  color: #fff;
+  font-size: 14px;
+  z-index: 10;
+}
+
+.designer-canvas-container .loading-overlay .spinner-sm {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 10px;
+}
+
+/* Footer */
+.designer-footer {
+  padding: 12px 24px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.designer-footer .tip-icon {
+  font-size: 14px;
+}
+
+.designer-footer p {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.designer-footer .disclaimer {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-top: 4px;
+}
+
+/* Panel selection highlight */
+.panel-selected-info {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #1e40af;
+}
+
+.panel-selected-info.visible {
+  display: flex;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .designer-metrics {
+    flex-direction: column;
+  }
+
+  .designer-toolbar {
+    padding: 0 16px 12px;
+  }
+
+  .designer-toolbar button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .designer-header {
+    padding: 16px 16px 0;
+  }
+
+  .designer-footer {
+    padding: 12px 16px;
+  }
+}

@@ -1,0 +1,282 @@
+<div class="report">
+  <style>
+    .report {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      color: #0f172a;
+      line-height: 1.6;
+    }
+
+    /* Verdict banner */
+    .verdict-banner {
+      padding: 32px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .verdict-banner.bad-deal { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: #fff; }
+    .verdict-banner.below-average { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; }
+    .verdict-banner.average { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #fff; }
+    .verdict-banner.fair { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; }
+
+    .verdict-label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.9; margin-bottom: 4px; }
+    .verdict-text { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .verdict-sub { font-size: 15px; opacity: 0.9; }
+
+    /* Cards */
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+      margin-bottom: 16px;
+    }
+
+    /* Comparison table */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .compare-table th {
+      text-align: left;
+      padding: 10px 12px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #64748b;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .compare-table th:nth-child(2), .compare-table th:nth-child(3) { text-align: right; }
+    .compare-table td {
+      padding: 12px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 15px;
+    }
+    .compare-table td:nth-child(2) { text-align: right; color: #64748b; }
+    .compare-table td:nth-child(3) { text-align: right; color: #0f172a; font-weight: 600; }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .row-highlight td { background: #f0fdf4; }
+    .savings-amount { color: #16a34a; font-weight: 700; }
+    .warning-amount { color: #dc2626; font-weight: 600; }
+
+    /* Issues list */
+    .issue {
+      padding: 14px 16px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .issue.high { background: #fef2f2; border-left: 4px solid #dc2626; }
+    .issue.medium { background: #fffbeb; border-left: 4px solid #f59e0b; }
+    .issue.low { background: #f0fdf4; border-left: 4px solid #22c55e; }
+    .issue-label {
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .issue.high .issue-label { color: #dc2626; }
+    .issue.medium .issue-label { color: #d97706; }
+    .issue.low .issue-label { color: #16a34a; }
+
+    /* Big number */
+    .big-number {
+      text-align: center;
+      padding: 20px;
+    }
+    .big-number .value { font-size: 42px; font-weight: 700; }
+    .big-number .value.savings { color: #16a34a; }
+    .big-number .value.cost { color: #dc2626; }
+    .big-number .label { font-size: 14px; color: #64748b; margin-top: 4px; }
+
+    /* Grid */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .stat-card {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-card .value { font-size: 24px; font-weight: 700; color: #0f172a; }
+    .stat-card .value.green { color: #16a34a; }
+    .stat-card .label { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+    /* Battery section */
+    .battery-tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .battery-tag.yes { background: #dcfce7; color: #16a34a; }
+    .battery-tag.no { background: #f1f5f9; color: #64748b; }
+
+    /* CTA */
+    .cta-card {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #fff;
+      border-radius: 12px;
+      padding: 28px;
+      text-align: center;
+      margin-top: 24px;
+    }
+    .cta-card h3 { font-size: 20px; margin-bottom: 8px; }
+    .cta-card p { opacity: 0.85; font-size: 15px; margin-bottom: 16px; }
+    .cta-btn {
+      display: inline-block;
+      padding: 12px 32px;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    /* Footer */
+    .disclaimer {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 20px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 600px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .verdict-text { font-size: 22px; }
+      .big-number .value { font-size: 32px; }
+    }
+  </style>
+
+  <!-- Verdict -->
+  <div class="verdict-banner {{VERDICT_CLASS}}">
+    <div class="verdict-label">Our Analysis</div>
+    <div class="verdict-text">{{VERDICT_HEADLINE}}</div>
+    <div class="verdict-sub">{{VERDICT_SUBTEXT}}</div>
+  </div>
+
+  <!-- How much you'd save with us -->
+  <div class="card">
+    <div class="big-number">
+      <div class="value savings">${{PRICE_SAVINGS}}</div>
+      <div class="label">less than {{COMPETITOR_NAME}}'s quote for the same system</div>
+    </div>
+  </div>
+
+  <!-- Side by side -->
+  <div class="card">
+    <div class="card-title">Side-by-Side Comparison</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>{{COMPETITOR_NAME}}</th>
+          <th>Our Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>System Size</td>
+          <td>{{THEIR_SIZE}} kW</td>
+          <td>{{OUR_SIZE}} kW</td>
+        </tr>
+        <tr class="row-highlight">
+          <td><strong>Total Price</strong></td>
+          <td class="warning-amount">${{THEIR_PRICE}}</td>
+          <td class="savings-amount">${{OUR_PRICE}}</td>
+        </tr>
+        <tr>
+          <td>Price per Watt</td>
+          <td>${{THEIR_PPW}}/W</td>
+          <td>${{OUR_PPW}}/W</td>
+        </tr>
+        <tr>
+          <td>Monthly Payment</td>
+          <td>${{THEIR_MONTHLY}}/mo</td>
+          <td>${{OUR_MONTHLY}}/mo</td>
+        </tr>
+        <tr>
+          <td>Annual Production</td>
+          <td>{{THEIR_PRODUCTION}} kWh</td>
+          <td>{{OUR_PRODUCTION}} kWh</td>
+        </tr>
+        <tr>
+          <td>Escalator</td>
+          <td>{{THEIR_ESCALATOR}}</td>
+          <td>0% (fixed payment)</td>
+        </tr>
+        <tr>
+          <td>Dealer Fee</td>
+          <td>{{THEIR_DEALER_FEE}}</td>
+          <td>$0</td>
+        </tr>
+        <tr>
+          <td>Tax Credit Required</td>
+          <td>{{THEIR_ITC}}</td>
+          <td>No</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Issues found -->
+  {{ISSUES_SECTION}}
+
+  <!-- Our offer -->
+  <div class="card">
+    <div class="card-title">What We'd Offer You</div>
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="value green">${{OUR_PRICE}}</div>
+        <div class="label">Total cost</div>
+      </div>
+      <div class="stat-card">
+        <div class="value">${{OUR_MONTHLY}}/mo</div>
+        <div class="label">Loan payment ({{LOAN_RATE}}% APR, {{LOAN_TERM}} yr)</div>
+      </div>
+      <div class="stat-card">
+        <div class="value green">{{PAYBACK_YEARS}} yr</div>
+        <div class="label">Payback period</div>
+      </div>
+    </div>
+    <p style="margin-top: 16px; font-size: 14px; color: #64748b; text-align: center;">
+      {{OUR_PRODUCTION}} kWh/year estimated production &middot; No tax credit needed &middot; No hidden fees
+    </p>
+  </div>
+
+  <!-- Battery -->
+  <div class="card">
+    <div class="card-title">Battery Storage</div>
+    <div style="margin-bottom: 8px;">
+      <span class="battery-tag {{BATTERY_TAG_CLASS}}">{{BATTERY_VERDICT}}</span>
+    </div>
+    <p style="font-size: 14px; color: #475569;">{{BATTERY_SUMMARY}}</p>
+    <p style="font-size: 13px; color: #94a3b8; margin-top: 8px;">Add-on cost: ${{BATTERY_COST}} for 13.5 kWh &middot; ~{{BATTERY_PAYBACK}} year payback</p>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-card">
+    <h3>Want this price?</h3>
+    <p>We're installing solar in Colorado at ${{OUR_PPW}}/W — no tax credit games, no hidden fees, no escalators.</p>
+  </div>
+
+  <div class="disclaimer">
+    This analysis is an estimate based on the information extracted from the uploaded proposal and publicly available solar production data (NREL PVWatts). Actual system performance, costs, and savings will vary. Production estimates assume south-facing installation with standard losses. Rate escalation assumed at {{RATE_ESCALATION}}% annually. This is not a binding offer.
+  </div>
+</div>

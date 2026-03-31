@@ -1,0 +1,22 @@
+{
+  "name": "solar-savings",
+  "version": "1.0.0",
+  "description": "Solar savings analysis tool - upload utility bill, get savings report",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.18.3",
+    "multer": "^1.4.5-lts.1",
+    "puppeteer": "^24.37.4"
+  }
+}

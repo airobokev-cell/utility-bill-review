@@ -1,0 +1,204 @@
+<div class="report">
+  <style>
+    .report {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      color: #0f172a;
+      line-height: 1.6;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+      margin-bottom: 16px;
+    }
+    .hero-card {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .hero-card .address { opacity: 0.7; font-size: 14px; margin-bottom: 16px; }
+    .hero-card .big-savings { font-size: 48px; font-weight: 700; color: #4ade80; }
+    .hero-card .savings-label { font-size: 15px; opacity: 0.85; margin-top: 4px; }
+    .hero-card .sub-stat { display: flex; justify-content: center; gap: 32px; margin-top: 20px; }
+    .hero-card .sub-stat div { text-align: center; }
+    .hero-card .sub-stat .value { font-size: 22px; font-weight: 600; }
+    .hero-card .sub-stat .label { font-size: 12px; opacity: 0.65; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .stat-card {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-card .value { font-size: 24px; font-weight: 700; color: #0f172a; }
+    .stat-card .value.green { color: #16a34a; }
+    .stat-card .value.blue { color: #3b82f6; }
+    .stat-card .label { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+    .bar-row { display: flex; align-items: center; margin-bottom: 8px; font-size: 14px; }
+    .bar-label { width: 90px; color: #64748b; font-size: 13px; }
+    .bar-track { flex: 1; height: 28px; background: #f1f5f9; border-radius: 6px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 10px; color: #fff; font-weight: 600; font-size: 13px; }
+    .bar-fill.before { background: #ef4444; }
+    .bar-fill.after { background: #22c55e; }
+
+    .monthly-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+    .monthly-table th {
+      background: #f8fafc; padding: 8px 10px; text-align: right;
+      font-weight: 600; color: #374151; border-bottom: 2px solid #e5e7eb;
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;
+    }
+    .monthly-table th:first-child { text-align: left; }
+    .monthly-table td { padding: 6px 10px; text-align: right; border-bottom: 1px solid #f1f5f9; color: #374151; }
+    .monthly-table td:first-child { text-align: left; font-weight: 500; }
+    .monthly-table tr:nth-child(even) { background: #fafbfc; }
+    .monthly-table tr.total-row { font-weight: 700; border-top: 2px solid #0f172a; background: #f8fafc; }
+    .monthly-table .net-export { color: #16a34a; }
+    .monthly-table .savings-cell { color: #16a34a; font-weight: 600; }
+
+    .battery-tag {
+      display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    }
+    .battery-tag.yes { background: #dcfce7; color: #16a34a; }
+    .battery-tag.no { background: #f1f5f9; color: #64748b; }
+
+    .cta-card {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #fff; border-radius: 12px; padding: 28px; text-align: center; margin-top: 24px;
+    }
+    .cta-card h3 { font-size: 20px; margin-bottom: 8px; }
+    .cta-card p { opacity: 0.85; font-size: 15px; }
+
+    .disclaimer { font-size: 11px; color: #94a3b8; margin-top: 20px; line-height: 1.5; }
+
+    @media (max-width: 600px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .hero-card .big-savings { font-size: 36px; }
+      .hero-card .sub-stat { flex-direction: column; gap: 12px; }
+    }
+  </style>
+
+  <!-- Hero: the punchline -->
+  <div class="hero-card">
+    <div class="address">{{ADDRESS}} &middot; {{UTILITY_NAME}}</div>
+    <div class="big-savings">${{MONTHLY_SAVINGS}}/mo</div>
+    <div class="savings-label">estimated monthly savings with solar</div>
+    <div class="sub-stat">
+      <div>
+        <div class="value">${{AVG_MONTHLY_PRE}}</div>
+        <div class="label">Current bill</div>
+      </div>
+      <div>
+        <div class="value" style="color: #4ade80;">${{AVG_MONTHLY_POST}}</div>
+        <div class="label">With solar</div>
+      </div>
+      <div>
+        <div class="value">${{ANNUAL_SAVINGS}}/yr</div>
+        <div class="label">Annual savings</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Before vs After bar -->
+  <div class="card">
+    <div class="card-title">Your Monthly Bill</div>
+    <div class="bar-row">
+      <span class="bar-label">Before</span>
+      <div class="bar-track"><div class="bar-fill before" style="width:100%">${{AVG_MONTHLY_PRE}}/mo</div></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label">After Solar</span>
+      <div class="bar-track"><div class="bar-fill after" style="width:{{POST_BAR_WIDTH}}%">${{AVG_MONTHLY_POST}}/mo</div></div>
+    </div>
+  </div>
+
+  <!-- System details -->
+  <div class="card">
+    <div class="card-title">Your Solar System</div>
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="value blue">{{SYSTEM_SIZE_KW}} kW</div>
+        <div class="label">{{PANEL_COUNT}} panels</div>
+      </div>
+      <div class="stat-card">
+        <div class="value blue">{{OFFSET_PCT}}%</div>
+        <div class="label">Bill offset</div>
+      </div>
+      <div class="stat-card">
+        <div class="value blue">{{ANNUAL_PRODUCTION}}</div>
+        <div class="label">kWh/year</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cost & payback -->
+  <div class="card">
+    <div class="card-title">Cost & Payback</div>
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="value">${{NET_COST}}</div>
+        <div class="label">System cost (${{PRICE_PER_WATT}}/W)</div>
+      </div>
+      <div class="stat-card">
+        <div class="value">${{MONTHLY_PAYMENT}}/mo</div>
+        <div class="label">Loan ({{LOAN_RATE}}%, {{LOAN_TERM}} yr)</div>
+      </div>
+      <div class="stat-card">
+        <div class="value green">{{PAYBACK_YEARS}} yr</div>
+        <div class="label">Payback period</div>
+      </div>
+    </div>
+    <p style="margin-top: 12px; font-size: 14px; color: #64748b; text-align: center;">
+      25-year total savings: <strong style="color: #16a34a;">${{TOTAL_25YR_SAVINGS}}</strong> &middot; No tax credit needed
+    </p>
+  </div>
+
+  <!-- Monthly chart -->
+  <div class="card">
+    <div class="card-title">Monthly Usage vs Solar Production</div>
+    {{MONTHLY_CHART}}
+  </div>
+
+  <!-- Monthly table -->
+  <div class="card">
+    <div class="card-title">Monthly Breakdown</div>
+    {{MONTHLY_TABLE}}
+  </div>
+
+  <!-- Battery -->
+  <div class="card">
+    <div class="card-title">Battery Storage</div>
+    <div style="margin-bottom: 8px;">
+      <span class="battery-tag {{BATTERY_TAG_CLASS}}">{{BATTERY_VERDICT}}</span>
+    </div>
+    <p style="font-size: 14px; color: #475569;">{{BATTERY_SUMMARY}}</p>
+    <p style="font-size: 13px; color: #94a3b8; margin-top: 8px;">Add-on: ${{BATTERY_COST}} for 13.5 kWh &middot; ~{{BATTERY_PAYBACK}} payback</p>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-card">
+    <h3>Ready to save ${{MONTHLY_SAVINGS}} every month?</h3>
+    <p>We install solar in Colorado at ${{PRICE_PER_WATT}}/W — no tax credit needed, no hidden fees.</p>
+  </div>
+
+  <div class="disclaimer">
+    This analysis uses estimates based on your uploaded utility bill, NREL PVWatts production modeling, and current rate structures. Actual savings depend on roof condition, shading, consumption changes, and future rate adjustments. Rate escalation: {{RATE_ESCALATION}}%/year. Panel degradation: 0.5%/year. This is not a binding offer.
+  </div>
+</div>

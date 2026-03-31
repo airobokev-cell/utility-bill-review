@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solar Check — Are You Getting a Fair Deal?</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="panel-designer.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Hero / Upload Section -->
+    <div id="upload-section">
+      <h1>Check Your Solar Deal</h1>
+      <p class="subtitle">Upload a solar proposal or your electric bill. We'll tell you if you're getting a fair price — in plain English.</p>
+
+      <!-- Tab selector -->
+      <div class="tabs">
+        <button class="tab active" data-mode="proposal" type="button">I have a solar quote</button>
+        <button class="tab" data-mode="bill" type="button">I have my electric bill</button>
+        <button class="tab" data-mode="both" type="button">I have both</button>
+      </div>
+
+      <!-- Proposal upload -->
+      <div id="upload-proposal" class="upload-area">
+        <div class="drop-zone" data-target="proposal-input">
+          <input type="file" id="proposal-input" accept=".pdf" hidden>
+          <div class="drop-content">
+            <div class="drop-icon">&#128196;</div>
+            <p><strong>Drop your solar proposal here</strong></p>
+            <p class="drop-sub">PDF from Sunrun, Vivint, Freedom, or any installer</p>
+            <button class="browse-btn" type="button">Browse files</button>
+          </div>
+        </div>
+        <div class="file-selected hidden">
+          <span class="file-name"></span>
+          <button class="clear-btn" type="button">&times;</button>
+        </div>
+      </div>
+
+      <!-- Bill upload -->
+      <div id="upload-bill" class="upload-area hidden">
+        <div class="drop-zone" data-target="bill-input">
+          <input type="file" id="bill-input" accept=".pdf" hidden>
+          <div class="drop-content">
+            <div class="drop-icon">&#9889;</div>
+            <p><strong>Drop your electric bill here</strong></p>
+            <p class="drop-sub">PDF from Xcel Energy, ComEd, or any utility</p>
+            <button class="browse-btn" type="button">Browse files</button>
+          </div>
+        </div>
+        <div class="file-selected hidden">
+          <span class="file-name"></span>
+          <button class="clear-btn" type="button">&times;</button>
+        </div>
+      </div>
+
+      <!-- Both uploads -->
+      <div id="upload-both" class="upload-area hidden">
+        <div class="dual-upload">
+          <div class="dual-box">
+            <div class="drop-zone small" data-target="both-proposal-input">
+              <input type="file" id="both-proposal-input" accept=".pdf" hidden>
+              <div class="drop-content">
+                <div class="drop-icon small">&#128196;</div>
+                <p><strong>Solar proposal</strong></p>
+                <button class="browse-btn" type="button">Browse</button>
+              </div>
+            </div>
+            <div class="file-selected hidden">
+              <span class="file-name"></span>
+              <button class="clear-btn" type="button">&times;</button>
+            </div>
+          </div>
+          <div class="dual-box">
+            <div class="drop-zone small" data-target="both-bill-input">
+              <input type="file" id="both-bill-input" accept=".pdf" hidden>
+              <div class="drop-content">
+                <div class="drop-icon small">&#9889;</div>
+                <p><strong>Electric bill</strong></p>
+                <button class="browse-btn" type="button">Browse</button>
+              </div>
+            </div>
+            <div class="file-selected hidden">
+              <span class="file-name"></span>
+              <button class="clear-btn" type="button">&times;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button id="analyze-btn" class="hidden" type="button">Analyze</button>
+      <p class="privacy-note">Your files are analyzed securely and deleted immediately after. We never store your documents.</p>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading-section" class="hidden">
+      <div class="spinner"></div>
+      <p id="loading-status">Reading your document...</p>
+      <button id="cancel-btn" type="button">Cancel</button>
+    </div>
+
+    <!-- Error -->
+    <div id="error-section" class="hidden">
+      <p id="error-message"></p>
+      <button id="retry-btn" type="button">Try Again</button>
+    </div>
+
+    <!-- Teaser (gated) -->
+    <div id="teaser-section" class="hidden">
+      <div id="teaser-content"></div>
+      <div class="gate-card">
+        <h3>Get your full report</h3>
+        <p>Enter your email and we'll send you the complete analysis with our counter-proposal.</p>
+        <form id="gate-form">
+          <input type="email" id="gate-email" placeholder="you@email.com" required>
+          <input type="text" id="gate-phone" placeholder="Phone (optional)">
+          <button type="submit" id="gate-submit">Send My Report</button>
+        </form>
+        <p class="gate-fine-print">No spam. Just your report and a follow-up if you want to chat.</p>
+      </div>
+    </div>
+
+    <!-- Full Report (after email capture) -->
+    <div id="report-section" class="hidden"></div>
+
+    <!-- Panel Designer (after report) -->
+    <div id="panel-designer-section" class="hidden"></div>
+  </div>
+
+  <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+  <script src="panel-designer.js"></script>
+  <script>
+    // ── State ──────────────────────────────────────────────────────────
+    let currentMode = 'proposal';
+    let files = { proposal: null, bill: null, 'both-proposal': null, 'both-bill': null };
+    let currentAbortController = null;
+    let pendingFullReport = null; // stashed until email captured
+    let pendingTeaser = null;
+    let pendingAnalysisData = null; // raw data for Excel export
+    let pendingMode = null;
+    let pendingLocation = null;   // { lat, lon } for panel designer
+    let pendingRoofData = null;
+
+    // ── DOM refs ───────────────────────────────────────────────────────
+    const tabs = document.querySelectorAll('.tab');
+    const uploadProposal = document.getElementById('upload-proposal');
+    const uploadBill = document.getElementById('upload-bill');
+    const uploadBoth = document.getElementById('upload-both');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const uploadSection = document.getElementById('upload-section');
+    const loadingSection = document.getElementById('loading-section');
+    const loadingStatus = document.getElementById('loading-status');
+    const errorSection = document.getElementById('error-section');
+    const errorMessage = document.getElementById('error-message');
+    const reportSection = document.getElementById('report-section');
+
+    // ── Tab switching ──────────────────────────────────────────────────
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentMode = tab.dataset.mode;
+
+        uploadProposal.classList.toggle('hidden', currentMode !== 'proposal');
+        uploadBill.classList.toggle('hidden', currentMode !== 'bill');
+        uploadBoth.classList.toggle('hidden', currentMode !== 'both');
+        updateAnalyzeButton();
+      });
+    });
+
+    // ── Drag & drop + browse for all drop zones ────────────────────────
+    document.querySelectorAll('.drop-zone').forEach((zone) => {
+      const inputId = zone.dataset.target;
+      const fileInput = document.getElementById(inputId);
+      const browseBtn = zone.querySelector('.browse-btn');
+      const container = zone.parentElement;
+      const fileSelected = container.querySelector('.file-selected');
+      const fileNameEl = fileSelected?.querySelector('.file-name');
+      const clearBtn = fileSelected?.querySelector('.clear-btn');
+
+      // Derive file key from input ID
+      const fileKey = inputId.replace('-input', '');
+
+      browseBtn.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+      zone.addEventListener('click', () => fileInput.click());
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) selectFile(fileKey, e.target.files[0], fileSelected, fileNameEl);
+      });
+
+      zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type === 'application/pdf') {
+          selectFile(fileKey, file, fileSelected, fileNameEl);
+        }
+      });
+
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          files[fileKey] = null;
+          fileInput.value = '';
+          fileSelected.classList.add('hidden');
+          updateAnalyzeButton();
+        });
+      }
+    });
+
+    function selectFile(key, file, selectedEl, nameEl) {
+      files[key] = file;
+      if (nameEl) nameEl.textContent = file.name;
+      if (selectedEl) selectedEl.classList.remove('hidden');
+      updateAnalyzeButton();
+    }
+
+    function updateAnalyzeButton() {
+      let ready = false;
+      if (currentMode === 'proposal') ready = !!files.proposal;
+      if (currentMode === 'bill') ready = !!files.bill;
+      if (currentMode === 'both') ready = !!files['both-proposal'] && !!files['both-bill'];
+      analyzeBtn.classList.toggle('hidden', !ready);
+    }
+
+    // ── Analyze ────────────────────────────────────────────────────────
+    analyzeBtn.addEventListener('click', async () => {
+      if (currentAbortController) currentAbortController.abort();
+      currentAbortController = new AbortController();
+
+      uploadSection.classList.add('hidden');
+      loadingSection.classList.remove('hidden');
+      errorSection.classList.add('hidden');
+      reportSection.classList.add('hidden');
+
+      const statuses = {
+        proposal: ['Reading your solar proposal...', 'Extracting pricing and system details...', 'Checking production estimates...', 'Scoring your deal...', 'Building your report...'],
+        bill: ['Reading your electric bill...', 'Extracting usage and rates...', 'Analyzing your roof...', 'Estimating solar production...', 'Calculating your savings...', 'Building your report...'],
+        both: ['Reading both documents...', 'Extracting all the details...', 'Analyzing your roof and usage...', 'Comparing their quote to ours...', 'Building your full report...'],
+      };
+
+      let statusIdx = 0;
+      const msgs = statuses[currentMode];
+      loadingStatus.textContent = msgs[0];
+      const statusInterval = setInterval(() => {
+        statusIdx = Math.min(statusIdx + 1, msgs.length - 1);
+        loadingStatus.textContent = msgs[statusIdx];
+      }, 5000);
+
+      try {
+        let endpoint, formData;
+
+        if (currentMode === 'proposal') {
+          endpoint = '/api/analyze-proposal';
+          formData = new FormData();
+          formData.append('proposal', files.proposal);
+        } else if (currentMode === 'bill') {
+          endpoint = '/api/analyze-bill';
+          formData = new FormData();
+          formData.append('bill', files.bill);
+        } else {
+          endpoint = '/api/analyze-both';
+          formData = new FormData();
+          formData.append('proposal', files['both-proposal']);
+          formData.append('bill', files['both-bill']);
+        }
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          body: formData,
+          signal: currentAbortController.signal,
+        });
+        const data = await res.json();
+
+        clearInterval(statusInterval);
+        loadingSection.classList.add('hidden');
+
+        if (!res.ok || !data.success) throw new Error(data.error || 'Analysis failed');
+
+        // Stash full report + raw data, show teaser + email gate
+        pendingFullReport = data.report;
+        pendingTeaser = data.teaser;
+        pendingAnalysisData = data.analysisData || null;
+        pendingMode = data.mode || currentMode;
+        pendingLocation = data.location || null;
+        pendingRoofData = data.roofData || null;
+
+        const teaserSection = document.getElementById('teaser-section');
+        const teaserContent = document.getElementById('teaser-content');
+        teaserContent.innerHTML = data.teaser || '';
+        teaserSection.classList.remove('hidden');
+      } catch (err) {
+        clearInterval(statusInterval);
+        loadingSection.classList.add('hidden');
+
+        if (err.name === 'AbortError') {
+          uploadSection.classList.remove('hidden');
+        } else {
+          errorMessage.textContent = err.message;
+          errorSection.classList.remove('hidden');
+        }
+      } finally {
+        currentAbortController = null;
+      }
+    });
+
+    // ── Email gate form ─────────────────────────────────────────────────
+    document.getElementById('gate-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('gate-email').value.trim();
+      const phone = document.getElementById('gate-phone').value.trim();
+      if (!email) return;
+
+      const submitBtn = document.getElementById('gate-submit');
+      submitBtn.textContent = 'Sending...';
+      submitBtn.disabled = true;
+
+      try {
+        // Save lead to server
+        await fetch('/api/capture-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, phone, mode: currentMode }),
+        });
+      } catch (err) {
+        // Don't block the report if lead capture fails
+        console.warn('Lead capture failed:', err);
+      }
+
+      // Show full report
+      const teaserSection = document.getElementById('teaser-section');
+      teaserSection.classList.add('hidden');
+      reportSection.innerHTML = pendingFullReport;
+      reportSection.classList.remove('hidden');
+      pendingFullReport = null;
+
+      // Store captured email for panel designer save
+      window._capturedEmail = email;
+
+      // Initialize panel designer if we have location data
+      if (pendingLocation && pendingLocation.lat && pendingLocation.lon) {
+        const designerSection = document.getElementById('panel-designer-section');
+        designerSection.classList.remove('hidden');
+
+        const sys = pendingAnalysisData?.savingsResult?.system ||
+                    pendingAnalysisData?.score?.counterProposal || {};
+        const panelCount = sys.panels || sys.panelCount || Math.ceil((sys.sizeKw || 8) / 0.4);
+        const systemSizeKw = sys.sizeKw || sys.systemSizeKw || panelCount * 0.4;
+        const annualProductionKwh = sys.annualProductionKwh ||
+                                    pendingAnalysisData?.savingsResult?.system?.annualProductionKwh ||
+                                    systemSizeKw * 1400;
+
+        initPanelDesigner(designerSection, {
+          lat: pendingLocation.lat,
+          lon: pendingLocation.lon,
+          panelCount,
+          systemSizeKw,
+          annualProductionKwh,
+          roofSegments: pendingRoofData?.roofSegments || [],
+        });
+      }
+
+      // Inject Excel download button at top of report
+      if (pendingAnalysisData) {
+        const dlBar = document.createElement('div');
+        dlBar.className = 'excel-download-bar';
+        dlBar.innerHTML = `
+          <button id="download-excel-btn" type="button">
+            <span class="excel-icon">&#128202;</span> Download Excel Report
+          </button>
+          <span class="excel-note">Full analysis with editable assumptions</span>
+        `;
+        reportSection.insertBefore(dlBar, reportSection.firstChild);
+
+        document.getElementById('download-excel-btn').addEventListener('click', async function() {
+          const btn = this;
+          btn.textContent = 'Generating...';
+          btn.disabled = true;
+          try {
+            const res = await fetch('/api/generate-excel', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ mode: pendingMode, ...pendingAnalysisData }),
+            });
+            if (!res.ok) throw new Error('Failed to generate Excel');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Solar-Analysis.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            btn.innerHTML = '<span class="excel-icon">&#10003;</span> Downloaded!';
+            setTimeout(() => {
+              btn.innerHTML = '<span class="excel-icon">&#128202;</span> Download Excel Report';
+              btn.disabled = false;
+            }, 3000);
+          } catch (err) {
+            console.error('Excel download failed:', err);
+            btn.textContent = 'Download failed — try again';
+            btn.disabled = false;
+          }
+        });
+      }
+    });
+
+    // ── Cancel + retry ─────────────────────────────────────────────────
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+      if (currentAbortController) { currentAbortController.abort(); currentAbortController = null; }
+    });
+    document.getElementById('retry-btn').addEventListener('click', () => {
+      errorSection.classList.add('hidden');
+      uploadSection.classList.remove('hidden');
+    });
+
+    window.addEventListener('beforeunload', () => {
+      if (currentAbortController) currentAbortController.abort();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<div class="report">
+  <style>
+    .report {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      color: #1a1a2e;
+      line-height: 1.5;
+    }
+    .report-header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      padding: 32px;
+      border-radius: 12px 12px 0 0;
+    }
+    .report-header h1 { font-size: 24px; margin: 0 0 4px; }
+    .report-header .address { opacity: 0.85; font-size: 15px; }
+    .report-header .meta { opacity: 0.6; font-size: 13px; margin-top: 8px; }
+    .section {
+      padding: 24px 32px;
+      border-left: 1px solid #e5e7eb;
+      border-right: 1px solid #e5e7eb;
+    }
+    .section:last-child {
+      border-bottom: 1px solid #e5e7eb;
+      border-radius: 0 0 12px 12px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #f59e0b;
+      margin-bottom: 16px;
+    }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .stat { }
+    .stat-value { font-size: 28px; font-weight: 700; color: #1a1a2e; }
+    .stat-value.savings { color: #16a34a; }
+    .stat-value.cost { color: #dc2626; }
+    .stat-value.highlight { color: #f59e0b; }
+    .stat-label { font-size: 13px; color: #6b7280; margin-top: 2px; }
+    .divider { height: 1px; background: #e5e7eb; margin: 0; }
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+    .breakdown-row .label { color: #6b7280; }
+    .breakdown-row .value { font-weight: 600; }
+    .breakdown-row.total { border-top: 2px solid #1a1a2e; font-weight: 700; margin-top: 4px; padding-top: 12px; }
+    .breakdown-row.credit .value { color: #16a34a; }
+    .note-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 14px;
+    }
+    .note-box.warning {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+    .note-box.neutral {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+    .note-box strong { display: block; margin-bottom: 4px; }
+    .battery-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .battery-badge.no { background: #fee2e2; color: #dc2626; }
+    .battery-badge.yes { background: #dcfce7; color: #16a34a; }
+    .verification-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .verification-badge.verified { background: #dcfce7; color: #16a34a; }
+    .verification-badge.partial { background: #fef3c7; color: #d97706; }
+    .verification-badge.not-found { background: #fee2e2; color: #dc2626; }
+    .verification-badge.skipped { background: #f1f5f9; color: #94a3b8; }
+    .verification-badge.error { background: #fee2e2; color: #dc2626; }
+    .verification-section .breakdown-row .value { font-size: 13px; }
+    .disclaimer {
+      font-size: 12px;
+      color: #9ca3af;
+      padding: 16px 32px;
+      border: 1px solid #e5e7eb;
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+    }
+    .chart-bar-container { margin-top: 12px; }
+    .chart-bar-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .chart-bar-label { width: 80px; color: #6b7280; }
+    .chart-bar-track { flex: 1; height: 20px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+    .chart-bar-fill { height: 100%; border-radius: 4px; }
+    .chart-bar-fill.pre { background: #ef4444; }
+    .chart-bar-fill.post { background: #22c55e; }
+    .chart-bar-value { width: 70px; text-align: right; font-weight: 600; font-size: 13px; }
+    .monthly-chart-section svg text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .monthly-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+    .monthly-table th {
+      background: #f8fafc;
+      padding: 8px 10px;
+      text-align: right;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 2px solid #e5e7eb;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .monthly-table th:first-child { text-align: left; }
+    .monthly-table td {
+      padding: 6px 10px;
+      text-align: right;
+      border-bottom: 1px solid #f1f5f9;
+      color: #374151;
+    }
+    .monthly-table td:first-child { text-align: left; font-weight: 500; }
+    .monthly-table tr:nth-child(even) { background: #fafbfc; }
+    .monthly-table tr:hover { background: #f0f4f8; }
+    .monthly-table tr.total-row {
+      font-weight: 700;
+      border-top: 2px solid #1a1a2e;
+      background: #f8fafc;
+    }
+    .monthly-table tr.total-row td { padding-top: 10px; }
+    .monthly-table .net-export { color: #16a34a; }
+    .monthly-table .savings-cell { color: #16a34a; font-weight: 600; }
+    @media print {
+      .report { max-width: 100%; }
+      .report-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .note-box, .battery-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .chart-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+
+  <div class="report-header">
+    <h1>Solar Savings Analysis</h1>
+    <div class="address">{{ADDRESS}}</div>
+    <div class="meta">{{UTILITY_NAME}} &middot; Account {{ACCOUNT_NUMBER}} &middot; Generated {{REPORT_DATE}}</div>
+  </div>
+
+  {{VERIFICATION_SECTION}}
+
+  <!-- Current Bill -->
+  <div class="section">
+    <div class="section-title">Your Current Electric Bill</div>
+    <div class="grid">
+      <div class="stat">
+        <div class="stat-value">${{CURRENT_MONTHLY_BILL}}</div>
+        <div class="stat-label">Monthly bill ({{BILL_MONTH}})</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">{{MONTHLY_USAGE_KWH}} kWh</div>
+        <div class="stat-label">Monthly usage</div>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="breakdown-row"><span class="label">Supply charges</span><span class="value">${{SUPPLY_TOTAL}}</span></div>
+      <div class="breakdown-row"><span class="label">Delivery charges</span><span class="value">${{DELIVERY_TOTAL}}</span></div>
+      <div class="breakdown-row"><span class="label">Taxes & fees</span><span class="value">${{TAXES_TOTAL}}</span></div>
+      <div class="breakdown-row total"><span class="label">Total</span><span class="value">${{BILL_TOTAL}}</span></div>
+    </div>
+    <div style="margin-top:8px; font-size:13px; color:#6b7280;">
+      Effective rate: ${{EFFECTIVE_RATE}}/kWh &middot; Estimated annual: ${{ESTIMATED_ANNUAL_BILL}}
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Recommended System -->
+  <div class="section">
+    <div class="section-title">Recommended Solar System</div>
+    <div class="grid-3">
+      <div class="stat">
+        <div class="stat-value highlight">{{SYSTEM_SIZE_KW}} kW</div>
+        <div class="stat-label">System size</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value highlight">{{PANEL_COUNT}}</div>
+        <div class="stat-label">Solar panels</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value highlight">{{OFFSET_PCT}}%</div>
+        <div class="stat-label">Usage offset</div>
+      </div>
+    </div>
+    <div style="margin-top:8px; font-size:14px; color:#6b7280;">
+      Estimated annual production: {{ANNUAL_PRODUCTION}} kWh
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Monthly Chart -->
+  <div class="section monthly-chart-section">
+    <div class="section-title">Monthly Consumption vs Solar Production</div>
+    {{MONTHLY_CHART}}
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Savings -->
+  <div class="section">
+    <div class="section-title">Your Savings</div>
+    <div class="grid">
+      <div class="stat">
+        <div class="stat-value savings">${{MONTHLY_SAVINGS}}/mo</div>
+        <div class="stat-label">Estimated monthly savings</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value savings">${{ANNUAL_SAVINGS}}/yr</div>
+        <div class="stat-label">Estimated annual savings</div>
+      </div>
+    </div>
+
+    <div class="chart-bar-container">
+      <div class="chart-bar-row">
+        <span class="chart-bar-label">Before</span>
+        <div class="chart-bar-track"><div class="chart-bar-fill pre" style="width:100%"></div></div>
+        <span class="chart-bar-value">${{AVG_MONTHLY_PRE}}/mo</span>
+      </div>
+      <div class="chart-bar-row">
+        <span class="chart-bar-label">After Solar</span>
+        <div class="chart-bar-track"><div class="chart-bar-fill post" style="width:{{POST_BAR_WIDTH}}%"></div></div>
+        <span class="chart-bar-value">${{AVG_MONTHLY_POST}}/mo</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Monthly Breakdown Table -->
+  <div class="section">
+    <div class="section-title">Monthly Breakdown</div>
+    {{MONTHLY_TABLE}}
+    <div class="note-box neutral" style="margin-top: 12px;">
+      <strong>About these estimates</strong>
+      "Bill Before Solar" amounts are calculated using rates from your uploaded bill applied to historical usage from the bill's bar chart. Actual past bills may have differed due to seasonal rate changes or tiered pricing.
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Cost & Incentives -->
+  <div class="section">
+    <div class="section-title">System Cost & Incentives</div>
+    <div class="breakdown-row"><span class="label">Gross system cost</span><span class="value">${{GROSS_COST}}</span></div>
+    <div class="breakdown-row credit"><span class="label">IL SRECs ({{SREC_YEARS}}-year contract)</span><span class="value">-${{SREC_VALUE}}</span></div>
+    <div class="breakdown-row total"><span class="label">Your net cost</span><span class="value">${{NET_COST}}</span></div>
+
+    <div class="grid" style="margin-top: 20px;">
+      <div class="stat">
+        <div class="stat-value highlight">{{PAYBACK_YEARS}} years</div>
+        <div class="stat-label">Simple payback period</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value savings">${{TOTAL_25YR_SAVINGS}}</div>
+        <div class="stat-label">25-year net savings</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Rate Structure -->
+  <div class="section">
+    <div class="section-title">How Solar Affects Your Rate</div>
+    <div class="note-box">
+      <strong>What solar offsets</strong>
+      Supply charges (${{SUPPLY_RATE}}/kWh) are fully offset through net metering. Your excess solar energy earns credits at the full retail supply rate, which offset future consumption.
+    </div>
+    <div class="note-box neutral" style="margin-top: 12px;">
+      <strong>What still applies</strong>
+      Delivery charges (${{DELIVERY_RATE}}/kWh variable + ${{FIXED_MONTHLY}} fixed/month) remain for any electricity you import from the grid. The fixed customer charge applies regardless of solar production.
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Battery -->
+  <div class="section">
+    <div class="section-title">Battery Storage Assessment</div>
+    <div style="margin-bottom:12px">
+      <span class="battery-badge {{BATTERY_BADGE_CLASS}}">{{BATTERY_RECOMMENDATION}}</span>
+    </div>
+    <p style="font-size:14px; color:#4b5563;">{{BATTERY_SUMMARY}}</p>
+    <div style="margin-top:12px; font-size:13px; color:#6b7280;">
+      Battery cost: ${{BATTERY_COST}} ({{BATTERY_SIZE}}) &middot; Annual value: ${{BATTERY_ANNUAL_VALUE}} &middot; Payback: {{BATTERY_PAYBACK}}
+    </div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    <strong>Disclaimer:</strong> This analysis uses estimates and assumptions including seasonal usage patterns extrapolated from a single billing period, standard system performance parameters, current incentive rates, and {{RATE_ESCALATION}}% annual rate escalation. Actual results will vary based on roof condition, shading, installation specifics, future rate changes, actual consumption patterns, and incentive availability. {{ROOF_ESTIMATE_NOTE}}Consult with a licensed solar installer for a detailed site assessment.
+  </div>
+</div>
