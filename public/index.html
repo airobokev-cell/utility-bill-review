@@ -3,16 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solar Check — Are You Getting a Fair Deal?</title>
+  <title>Utility Bill Review — Is Your Energy Bill Too High? Free Analysis</title>
+  <meta name="description" content="Upload your utility bill or solar quote for a free, honest analysis. Find out if you're overpaying and how much you could save with solar, battery storage, and home energy optimization.">
+  <meta name="keywords" content="utility bill review, solar quote analysis, energy savings calculator, solar proposal check, electricity bill analysis, home energy audit">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Utility Bill Review — Free Energy Savings Analysis">
+  <meta property="og:description" content="Upload your utility bill or solar quote. Get an honest, AI-powered analysis of what you're really paying and how much you could save.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://utilitybillreview.com">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Utility Bill Review — Free Energy Savings Analysis">
+  <meta name="twitter:description" content="Upload your utility bill or solar quote. Get an honest analysis of what you're really paying.">
+
+  <link rel="canonical" href="https://utilitybillreview.com">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="panel-designer.css">
+
+  <!-- Analytics placeholder — replace with your tracking ID -->
+  <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-XXXXXXXXXX');</script> -->
 </head>
 <body>
   <div id="app">
     <!-- Hero / Upload Section -->
     <div id="upload-section">
-      <h1>Check Your Solar Deal</h1>
-      <p class="subtitle">Upload a solar proposal or your electric bill. We'll tell you if you're getting a fair price — in plain English.</p>
+      <h1>Is Your Energy Bill Ripping You Off?</h1>
+      <p class="subtitle">Upload your utility bill or solar quote. Our AI analyzes it in 60 seconds and tells you exactly what you're overpaying — in plain English.</p>
+      <div class="trust-bar">
+        <span class="trust-item">Free &amp; private</span>
+        <span class="trust-sep"></span>
+        <span class="trust-item">AI-powered analysis</span>
+        <span class="trust-sep"></span>
+        <span class="trust-item">No sales pitch</span>
+      </div>
 
       <!-- Tab selector -->
       <div class="tabs">
@@ -126,6 +152,36 @@
 
     <!-- Panel Designer (after report) -->
     <div id="panel-designer-section" class="hidden"></div>
+
+    <!-- FAQ for SEO -->
+    <div class="faq-section" id="faq">
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-item">
+        <h3>Is this really free?</h3>
+        <p>Yes. Upload your bill or solar quote and get a full analysis at no cost. We make money by offering competitive solar installations to people who want one — not by selling your data.</p>
+      </div>
+      <div class="faq-item">
+        <h3>What happens to my documents?</h3>
+        <p>Your files are analyzed in real-time and deleted immediately after. We never store your utility bills or solar proposals. The only thing we keep is your email (if you choose to share it) so we can send your report.</p>
+      </div>
+      <div class="faq-item">
+        <h3>How accurate is the analysis?</h3>
+        <p>We use real data from Google's Solar API for your specific roof, NREL's PVWatts for production estimates, and current equipment pricing. Our savings projections use conservative 3% annual rate increases — not the inflated 5-6% some installers assume.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Does the federal solar tax credit still exist?</h3>
+        <p>The residential Section 25D Investment Tax Credit expired December 31, 2025. If an installer is still quoting you a 30% tax credit, that's a red flag. Our analysis accounts for this — we show you what solar really costs without phantom credits.</p>
+      </div>
+      <div class="faq-item">
+        <h3>What utilities do you support?</h3>
+        <p>Our AI can read bills from any US utility — ComEd, Xcel Energy, Duke Energy, PG&E, SCE, and hundreds more. Upload any electric bill PDF and we'll extract your usage, rates, and charges automatically.</p>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <p>&copy; 2026 Utility Bill Review. Honest energy analysis, no sales pitch.</p>
+      <p><a href="mailto:hello@utilitybillreview.com">hello@utilitybillreview.com</a></p>
+    </footer>
   </div>
 
   <script src="https://unpkg.com/konva@9/konva.min.js"></script>
@@ -322,7 +378,7 @@
         await fetch('/api/capture-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, phone, mode: currentMode }),
+          body: JSON.stringify({ email, phone, mode: currentMode, analysisData: pendingAnalysisData }),
         });
       } catch (err) {
         // Don't block the report if lead capture fails

@@ -6,6 +6,8 @@ const cors = require('cors');
 const multer = require('multer');
 const { PORT, MAX_FILE_SIZE } = require('./constants');
 const { analyzeBill, analyzeProposal, analyzeBoth } = require('./pipeline/orchestrator');
+const { saveLead, getAllLeads, getTotalLeadCount, saveAnalysis } = require('./db');
+const { sendReportEmail } = require('./email/sendgrid');
 
 process.on('uncaughtException', (err) => {
   console.error('[server] Uncaught exception:', err.stack || err);
@@ -71,30 +73,42 @@ async function cleanupFiles(...filePaths) {
   }
 }
 
-// ── Lead storage ────────────────────────────────────────────────────
-const leadsPath = path.join(__dirname, '..', 'leads.json');
-function saveLead(lead) {
-  let leads = [];
-  try { leads = JSON.parse(fs.readFileSync(leadsPath, 'utf-8')); } catch {}
-  leads.push({ ...lead, timestamp: new Date().toISOString() });
-  fs.writeFileSync(leadsPath, JSON.stringify(leads, null, 2));
-  console.log(`[leads] Saved lead: ${lead.email} (${leads.length} total)`);
-}
-
-app.post('/api/capture-lead', express.json(), (req, res) => {
-  const { email, phone, mode } = req.body;
+// ── Lead storage (SQLite) ───────────────────────────────────────────
+app.post('/api/capture-lead', express.json(), async (req, res) => {
+  const { email, phone, mode, analysisData } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
-  saveLead({ email, phone, mode });
+  const leadId = saveLead(email, phone, mode);
+  if (analysisData) saveAnalysis(leadId, mode, analysisData);
+  // Send report email (non-blocking)
+  sendReportEmail(email, mode, analysisData).catch(() => {});
   res.json({ success: true });
 });
 
 app.get('/api/leads', (req, res) => {
-  try {
-    const leads = JSON.parse(fs.readFileSync(leadsPath, 'utf-8'));
-    res.json({ success: true, count: leads.length, leads });
-  } catch {
-    res.json({ success: true, count: 0, leads: [] });
+  const leads = getAllLeads();
+  res.json({ success: true, count: leads.length, leads });
+});
+
+// ── Admin endpoint (basic auth) ────────────────────────────────────
+app.get('/admin/leads', (req, res) => {
+  const auth = req.headers.authorization;
+  const expected = 'Basic ' + Buffer.from((process.env.ADMIN_USER || 'admin') + ':' + (process.env.ADMIN_PASS || 'changeme')).toString('base64');
+  if (auth !== expected) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Admin"');
+    return res.status(401).send('Unauthorized');
   }
+  const leads = getAllLeads();
+  const total = getTotalLeadCount();
+  const html = `<!DOCTYPE html><html><head><title>Leads Admin — Utility Bill Review</title>
+    <style>body{font-family:system-ui;max-width:900px;margin:40px auto;padding:0 20px}
+    table{width:100%;border-collapse:collapse}th,td{padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:left}
+    th{background:#f8fafc;font-size:13px;text-transform:uppercase;color:#64748b}
+    .stat{display:inline-block;background:#f0fdf4;padding:8px 16px;border-radius:8px;margin-right:12px;font-weight:600}</style></head>
+    <body><h1>Leads Dashboard</h1>
+    <p><span class="stat">${total} total leads</span></p>
+    <table><thead><tr><th>ID</th><th>Email</th><th>Phone</th><th>Mode</th><th>Status</th><th>Date</th></tr></thead>
+    <tbody>${leads.map(l => `<tr><td>${l.id}</td><td>${l.email}</td><td>${l.phone || '-'}</td><td>${l.mode || '-'}</td><td>${l.status}</td><td>${l.created_at}</td></tr>`).join('')}</tbody></table></body></html>`;
+  res.send(html);
 });
 
 // ── Teaser generators (shown before email gate) ─────────────────────
@@ -265,22 +279,12 @@ app.get('/api/satellite-image', async (req, res) => {
 app.post('/api/save-panel-design', express.json(), (req, res) => {
   const { email, panels, panelCount, systemSizeKw } = req.body;
   if (!panels) return res.status(400).json({ error: 'Panel layout required' });
-
-  // Append design to leads file
-  let leads = [];
-  try { leads = JSON.parse(fs.readFileSync(leadsPath, 'utf-8')); } catch {}
-
-  // Find existing lead by email and update, or append new
-  const existingIdx = email ? leads.findIndex(l => l.email === email) : -1;
   const designData = { panels, panelCount, systemSizeKw, designSavedAt: new Date().toISOString() };
-
-  if (existingIdx >= 0) {
-    leads[existingIdx].panelDesign = designData;
-  } else {
-    leads.push({ email: email || 'anonymous', panelDesign: designData, timestamp: new Date().toISOString() });
+  if (email) {
+    const { findLeadByEmail } = require('./db');
+    const lead = findLeadByEmail(email);
+    if (lead) saveAnalysis(lead.id, 'panel-design', designData);
   }
-
-  fs.writeFileSync(leadsPath, JSON.stringify(leads, null, 2));
   console.log(`[leads] Saved panel design (${panelCount} panels)`);
   res.json({ success: true });
 });
