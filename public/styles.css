@@ -45,6 +45,33 @@ h1 {
   border-radius: 50%;
 }
 
+/* Social proof */
+.social-proof {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  font-size: 14px;
+  color: #166534;
+  background: #f0fdf4;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+}
+.proof-stat { font-weight: 400; }
+.proof-stat strong { font-weight: 700; color: #15803d; }
+.proof-sep {
+  width: 4px;
+  height: 4px;
+  background: #86efac;
+  border-radius: 50%;
+}
+@media (max-width: 500px) {
+  .social-proof { flex-direction: column; gap: 4px; }
+  .proof-sep { display: none; }
+}
+
 /* FAQ section */
 .faq-section {
   margin-top: 48px;

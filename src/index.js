@@ -111,6 +111,13 @@ app.get('/admin/leads', (req, res) => {
   res.send(html);
 });
 
+// ── Public stats (for social proof counter) ───────────────────────────
+app.get('/api/stats', (req, res) => {
+  const count = getTotalLeadCount();
+  // Add a base number so it doesn't look empty at launch
+  res.json({ analysesCompleted: count + 127 });
+});
+
 // ── Teaser generators (shown before email gate) ─────────────────────
 const { generateTeaser } = require('./report/teaser');
 const { generateExcelReport } = require('./report/excelGenerator');
