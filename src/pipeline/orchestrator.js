@@ -4,12 +4,12 @@ const { scoreProposal } = require('./proposalScorer');
 const { geocodeAddress } = require('./geocoder');
 const { analyzeRoof } = require('./roofAnalysis');
 const { estimateProduction } = require('./solarProduction');
-const { extractCurrentRates, getPostSolarRates } = require('./rateStructure');
+const { extractCurrentRates, getPostSolarRates, calculateTOUImpact } = require('./rateStructure');
 const { calculateIncentives } = require('./incentives');
 const { analyzeBatteryValue } = require('./batteryAnalysis');
 const { calculateSavings, estimateAnnualConsumption, calculateSystemSize } = require('./savingsCalculator');
 const { generateReport } = require('../report/generator');
-const { SYSTEM_COST_PER_WATT, ANNUAL_RATE_ESCALATION } = require('../constants');
+const { SYSTEM_COST_PER_WATT, ANNUAL_RATE_ESCALATION, XCEL_FLAT_RATE } = require('../constants');
 const { defaultVerification, buildVerificationResult } = require('./verification');
 const { lookupWhitepages } = require('./whitepages');
 
@@ -115,6 +115,15 @@ async function analyzeBill(pdfPath, signal, options = {}) {
     batteryAnalysis,
   });
 
+  // Step 9.5: TOU impact analysis
+  throwIfAborted(signal);
+  console.log('[orchestrator] Step 6.5: Calculating TOU rate impact...');
+  const touImpact = calculateTOUImpact(
+    consumptionData.annualConsumption,
+    productionData.acAnnual,
+    currentRates
+  );
+
   // Step 10: Generate report
   throwIfAborted(signal);
   console.log('[orchestrator] Step 7: Generating report...');
@@ -126,12 +135,13 @@ async function analyzeBill(pdfPath, signal, options = {}) {
     postSolarRates,
     incentives,
     roofData,
+    touImpact,
     verification: finalVerification,
     mode: 'bill',
   });
 
   console.log('[orchestrator] Bill analysis complete!');
-  return { html: reportHtml, billData, savingsResult, lat, lon, roofData };
+  return { html: reportHtml, billData, savingsResult, lat, lon, roofData, touImpact };
 }
 
 /**
@@ -169,13 +179,13 @@ async function analyzeProposal(pdfPath, signal) {
 
   // Step 4: Build rate assumptions
   throwIfAborted(signal);
-  // Use a reasonable Colorado default rate structure for the comparison
+  // Use Xcel Energy Residential R rate schedule for Colorado comparison
   const currentRates = {
-    supplyPerKwh: 0.085,
-    deliveryVariablePerKwh: 0.045,
-    deliveryFixedMonthly: 12.50,
+    supplyPerKwh: XCEL_FLAT_RATE.supplyPerKwh,
+    deliveryVariablePerKwh: XCEL_FLAT_RATE.deliveryPerKwh,
+    deliveryFixedMonthly: XCEL_FLAT_RATE.fixedChargeMonthly,
     taxPerKwh: 0.012,
-    totalEffectiveRate: 0.164,
+    totalEffectiveRate: XCEL_FLAT_RATE.totalPerKwh,
     supplyTotal: 0,
     deliveryTotal: 0,
     taxesTotal: 0,
@@ -266,6 +276,14 @@ async function analyzeBoth(billPdfPath, proposalPdfPath, signal) {
     batteryAnalysis,
   });
 
+  // TOU impact analysis
+  throwIfAborted(signal);
+  const touImpact = calculateTOUImpact(
+    consumptionData.annualConsumption,
+    productionData.acAnnual,
+    currentRates
+  );
+
   // Generate combined report
   throwIfAborted(signal);
   const reportHtml = await generateReport({
@@ -279,11 +297,12 @@ async function analyzeBoth(billPdfPath, proposalPdfPath, signal) {
     batteryAnalysis,
     incentives,
     roofData,
+    touImpact,
     mode: 'combined',
   });
 
   console.log('[orchestrator] Combined analysis complete!');
-  return { html: reportHtml, billData, proposalData, score, savingsResult, lat, lon, roofData };
+  return { html: reportHtml, billData, proposalData, score, savingsResult, lat, lon, roofData, touImpact };
 }
 
 module.exports = { analyzeBill, analyzeProposal, analyzeBoth };

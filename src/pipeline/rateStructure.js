@@ -1,4 +1,4 @@
-const { NET_METERING_CREDIT_RATE, AVOIDED_COST_RATE } = require('../constants');
+const { NET_METERING_CREDIT_RATE, AVOIDED_COST_RATE, XCEL_TOU_RATE, XCEL_FLAT_RATE } = require('../constants');
 
 /**
  * Normalize a per-kWh rate to dollars.
@@ -84,11 +84,12 @@ function extractCurrentRates(billData) {
 /**
  * Determine post-solar rate structure.
  * Solar offsets supply charges via net metering.
- * Delivery and fixed charges remain for imported kWh.
+ * Under Colorado SB 23-258, new net metering customers receive credits
+ * at a reduced rate (not full retail).
  */
 function getPostSolarRates(currentRates) {
   return {
-    // Net metering credit rate for exported kWh
+    // Net metering credit rate for exported kWh (SB 23-258: reduced from full retail)
     netMeteringCreditPerKwh: currentRates.supplyPerKwh * NET_METERING_CREDIT_RATE,
 
     // Charges on imported kWh
@@ -133,7 +134,6 @@ function calculateMonthlyPostSolarBill(consumptionKwh, productionKwh, postSolarR
   const deliveryCharge = imported * postSolarRates.deliveryVariablePerKwh + postSolarRates.deliveryFixedMonthly;
 
   // Taxes proportional to remaining charges
-  const taxableCharges = supplyCharge + deliveryCharge;
   const taxes = imported > 0 ? imported * postSolarRates.taxPerKwh : postSolarRates.deliveryFixedMonthly * 0.05;
 
   const total = supplyCharge + deliveryCharge + taxes;
@@ -150,4 +150,94 @@ function calculateMonthlyPostSolarBill(consumptionKwh, productionKwh, postSolarR
   };
 }
 
-module.exports = { extractCurrentRates, getPostSolarRates, calculateMonthlyPostSolarBill };
+/**
+ * Calculate TOU impact on solar ROI.
+ * Models how solar production aligns with Xcel's TOU-R rate periods.
+ *
+ * Key insight: Solar produces most during midday (off-peak in Xcel's TOU-R),
+ * so TOU rates can reduce solar's effective value vs flat rate.
+ * However, batteries can shift value to on-peak.
+ */
+function calculateTOUImpact(annualConsumptionKwh, annualProductionKwh, currentRates) {
+  const tou = XCEL_TOU_RATE;
+  const flat = XCEL_FLAT_RATE;
+
+  // ── Flat rate scenario ──────────────────────────────────────────
+  const flatAnnualBillPreSolar = annualConsumptionKwh * flat.totalPerKwh + flat.fixedChargeMonthly * 12;
+  const flatNetConsumption = Math.max(0, annualConsumptionKwh - annualProductionKwh);
+  const flatExported = Math.max(0, annualProductionKwh - annualConsumptionKwh);
+  const flatExportCredit = flatExported * flat.totalPerKwh * NET_METERING_CREDIT_RATE;
+  const flatAnnualBillPostSolar = flatNetConsumption * flat.totalPerKwh + flat.fixedChargeMonthly * 12 - flatExportCredit;
+  const flatSavings = flatAnnualBillPreSolar - Math.max(0, flatAnnualBillPostSolar);
+
+  // ── TOU rate scenario ───────────────────────────────────────────
+  // Pre-solar TOU bill
+  const touOnPeakConsumption = annualConsumptionKwh * tou.consumptionOnPeakFraction;
+  const touOffPeakConsumption = annualConsumptionKwh * tou.consumptionOffPeakFraction;
+  const touAnnualBillPreSolar =
+    touOnPeakConsumption * tou.onPeak.totalPerKwh +
+    touOffPeakConsumption * tou.offPeak.totalPerKwh +
+    tou.fixedChargeMonthly * 12;
+
+  // Post-solar TOU: solar offsets mostly off-peak consumption
+  const solarOnPeak = annualProductionKwh * tou.solarOnPeakFraction;
+  const solarOffPeak = annualProductionKwh * tou.solarOffPeakFraction;
+
+  // Solar first offsets same-period consumption, excess exported
+  const onPeakOffset = Math.min(solarOnPeak, touOnPeakConsumption);
+  const offPeakOffset = Math.min(solarOffPeak, touOffPeakConsumption);
+
+  const remainingOnPeak = touOnPeakConsumption - onPeakOffset;
+  const remainingOffPeak = touOffPeakConsumption - offPeakOffset;
+
+  // Export credits at reduced NEM rate (weighted by period)
+  const onPeakExport = Math.max(0, solarOnPeak - touOnPeakConsumption);
+  const offPeakExport = Math.max(0, solarOffPeak - touOffPeakConsumption);
+  const exportCredit =
+    onPeakExport * tou.onPeak.totalPerKwh * NET_METERING_CREDIT_RATE +
+    offPeakExport * tou.offPeak.totalPerKwh * NET_METERING_CREDIT_RATE;
+
+  const touAnnualBillPostSolar =
+    remainingOnPeak * tou.onPeak.totalPerKwh +
+    remainingOffPeak * tou.offPeak.totalPerKwh +
+    tou.fixedChargeMonthly * 12 -
+    exportCredit;
+
+  const touSavings = touAnnualBillPreSolar - Math.max(0, touAnnualBillPostSolar);
+
+  // ── TOU + Battery scenario ──────────────────────────────────────
+  // Battery shifts off-peak solar to on-peak consumption
+  const batteryShiftKwh = XCEL_TOU_RATE.onPeak ? 13.5 * 0.9 * 280 : 0; // ~3,400 kWh/yr
+  const batteryArbitrageValue = batteryShiftKwh * (tou.onPeak.totalPerKwh - tou.offPeak.totalPerKwh);
+  const touWithBatterySavings = touSavings + batteryArbitrageValue;
+
+  return {
+    flatRate: {
+      name: flat.name,
+      ratePerKwh: flat.totalPerKwh,
+      preSolarAnnualBill: Math.round(flatAnnualBillPreSolar),
+      postSolarAnnualBill: Math.round(Math.max(0, flatAnnualBillPostSolar)),
+      annualSavings: Math.round(flatSavings),
+    },
+    touRate: {
+      name: tou.name,
+      onPeakRate: tou.onPeak.totalPerKwh,
+      offPeakRate: tou.offPeak.totalPerKwh,
+      preSolarAnnualBill: Math.round(touAnnualBillPreSolar),
+      postSolarAnnualBill: Math.round(Math.max(0, touAnnualBillPostSolar)),
+      annualSavings: Math.round(touSavings),
+      solarOnPeakPct: Math.round(tou.solarOnPeakFraction * 100),
+      note: `Only ~${Math.round(tou.solarOnPeakFraction * 100)}% of solar production falls during on-peak hours. Most solar generation occurs during off-peak when rates are lower.`,
+    },
+    touWithBattery: {
+      annualSavings: Math.round(touWithBatterySavings),
+      batteryArbitrageValue: Math.round(batteryArbitrageValue),
+      note: `Adding a battery to TOU-R shifts ~${Math.round(batteryShiftKwh).toLocaleString()} kWh/yr from off-peak to on-peak, adding ~$${Math.round(batteryArbitrageValue)}/yr in arbitrage value.`,
+    },
+    recommendation: flatSavings > touSavings
+      ? `Flat rate (${flat.name}) saves you $${Math.round(flatSavings - touSavings)}/yr more with solar alone. TOU-R only wins if you add a battery.`
+      : `TOU-R saves you $${Math.round(touSavings - flatSavings)}/yr more than flat rate with solar.`,
+  };
+}
+
+module.exports = { extractCurrentRates, getPostSolarRates, calculateMonthlyPostSolarBill, calculateTOUImpact };
