@@ -363,9 +363,133 @@ h1 {
 
 .gate-fine-print { font-size: 11px; color: #94a3b8; margin-top: 10px; }
 
+/* Colorado callout section */
+.colorado-callout {
+  margin-top: 40px;
+  padding: 28px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+}
+.colorado-callout h2 {
+  font-size: 20px;
+  color: #0f172a;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.callout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.callout-item {
+  padding: 12px;
+  background: rgba(255,255,255,0.7);
+  border-radius: 8px;
+}
+.callout-icon {
+  font-size: 20px;
+  display: block;
+  margin-bottom: 4px;
+}
+.callout-item strong {
+  font-size: 14px;
+  color: #0f172a;
+  display: block;
+  margin-bottom: 2px;
+}
+.callout-item p {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* How It Works section */
+.how-it-works {
+  margin-top: 40px;
+  text-align: center;
+}
+.how-it-works h2 {
+  font-size: 22px;
+  color: #0f172a;
+  margin-bottom: 20px;
+}
+.steps-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+.step {
+  padding: 20px 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+.step-number {
+  width: 36px;
+  height: 36px;
+  background: #3b82f6;
+  color: #fff;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+.step h3 {
+  font-size: 16px;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+.step p {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Trust section */
+.trust-section {
+  margin-top: 40px;
+}
+.trust-section h2 {
+  font-size: 22px;
+  color: #0f172a;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.trust-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.trust-card {
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+.trust-card strong {
+  display: block;
+  font-size: 14px;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+.trust-card p {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   h1 { font-size: 24px; }
   .dual-upload { grid-template-columns: 1fr; }
   .tab { font-size: 12px; padding: 8px 6px; }
+  .callout-grid { grid-template-columns: 1fr; }
+  .steps-grid { grid-template-columns: 1fr; }
+  .trust-grid { grid-template-columns: 1fr; }
 }
