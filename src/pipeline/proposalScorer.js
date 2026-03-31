@@ -1,4 +1,4 @@
-const { SYSTEM_COST_PER_WATT, BATTERY_COST_13KWH, DEFAULT_LOAN_RATE, DEFAULT_LOAN_TERM_YEARS, ANNUAL_RATE_ESCALATION } = require('../constants');
+const { SYSTEM_COST_PER_WATT, BATTERY_COST_PER_KWH, BATTERY_CAPACITY_KWH, DEFAULT_LOAN_RATE, DEFAULT_LOAN_TERM_YEARS, ANNUAL_RATE_ESCALATION } = require('../constants');
 
 /**
  * Score a competitor's solar proposal and generate a comparison against our offering.
@@ -144,7 +144,7 @@ function scoreProposal(proposalData, productionData, currentRates) {
     monthlySavings: ourMonthlySavings,
     paybackYears: Math.round((ourTotalPrice / ourAnnualSavings) * 10) / 10,
     total25YearCost: Math.round(our25YearCost),
-    batteryPrice: BATTERY_COST_13KWH,
+    batteryPrice: Math.round(BATTERY_COST_PER_KWH * BATTERY_CAPACITY_KWH),
   };
 
   // ── Side-by-Side Comparison ─────────────────────────────────────────

@@ -125,9 +125,10 @@ function buildAssumptionsSheet(wb, savingsResult) {
     { label: 'Loan Interest Rate (APR)', value: constants.DEFAULT_LOAN_RATE, fmt: pctFmt, notes: 'Our financing rate — no dealer fee baked in' },
     { label: 'Loan Term (Years)', value: constants.DEFAULT_LOAN_TERM_YEARS, fmt: '#,##0', notes: 'Standard loan term' },
     { label: 'Discount Rate (for NPV)', value: constants.DISCOUNT_RATE, fmt: pctFmt, notes: 'Used to calculate net present value of savings' },
-    { label: 'Net Metering Credit Rate', value: constants.NET_METERING_CREDIT_RATE, fmt: pctFmt, notes: '100% = full retail credit for exported energy' },
+    { label: 'Net Metering Credit Rate', value: constants.NET_METERING_CREDIT_RATE, fmt: pctFmt, notes: 'CO SB 23-258: reduced credit rate for new systems (75% of retail)' },
     { label: 'Analysis Period (Years)', value: constants.ANALYSIS_YEARS, fmt: '#,##0', notes: 'Standard solar warranty / analysis period' },
-    { label: 'Battery Cost (13.5 kWh)', value: constants.BATTERY_COST_13KWH, fmt: currencyFmt, notes: 'Installed battery price' },
+    { label: 'Battery Cost per kWh', value: constants.BATTERY_COST_PER_KWH, fmt: currencyFmt, notes: 'Installed battery price per kWh ($400-600 market range)' },
+    { label: 'Battery Capacity (kWh)', value: constants.BATTERY_CAPACITY_KWH, fmt: '#,##0.0', notes: 'Standard residential battery capacity' },
   ];
 
   // Add year-1 baseline values if we have savings data
