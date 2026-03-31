@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Utility Bill Review — Free Solar Savings Analysis for Colorado Homeowners</title>
-  <meta name="description" content="Upload your Xcel Energy bill or solar quote for a free, AI-powered analysis. See how much Colorado homeowners save with solar — no tax credit needed. Honest numbers in 60 seconds.">
+  <meta name="description" content="Got a solar proposal? Upload it for a free, AI-powered analysis. We grade your quote against real Colorado data — Xcel Energy rates, NREL production estimates, and actual pricing. Independent. No sales pitch. 60 seconds.">
   <meta name="keywords" content="utility bill review, solar savings Colorado, Xcel Energy bill analysis, solar quote check, Colorado solar calculator, solar proposal review, Denver solar savings, electricity bill analysis">
 
   <!-- Open Graph -->
   <meta property="og:title" content="Utility Bill Review — Free Solar Savings Analysis for Colorado">
-  <meta property="og:description" content="Upload your Xcel Energy bill or solar quote. Get an honest, AI-powered analysis of what you're really paying and how much you could save with solar in Colorado.">
+  <meta property="og:description" content="Got a solar proposal? Upload it for a free, independent analysis. We grade your quote against real Colorado data — Xcel rates, NREL production, and actual pricing. No sales pitch.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://www.utilitybillreview.com">
   <meta property="og:locale" content="en_US">
@@ -62,10 +62,18 @@
     "mainEntity": [
       {
         "@type": "Question",
-        "name": "Is this really free?",
+        "name": "Why is this free? What's the catch?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes. Upload your bill or solar quote and get a full analysis at no cost. We make money by offering competitive solar installations to people who want one — not by selling your data."
+          "text": "Solar companies spend $3,000-6,000 per customer on sales and marketing, and that cost gets built into your price. We built this tool to make the solar buying process more efficient. There's no catch: we don't sell your data and we'll never pressure you to buy anything."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "I already got 3 quotes. Why do I need this?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Three quotes tell you what three companies charge. They don't tell you what solar should cost for your home, whether the production estimates are realistic, or how the financing terms compare to market rates. We measure your quotes against objective benchmarks like NREL production data and actual Colorado pricing."
         }
       },
       {
@@ -108,14 +116,14 @@
   <div id="app">
     <!-- Hero / Upload Section -->
     <div id="upload-section">
-      <h1>Is Your Energy Bill Ripping You Off?</h1>
-      <p class="subtitle">Upload your utility bill or solar quote. Our AI analyzes it in 60 seconds and tells you exactly what you're overpaying — in plain English.</p>
+      <h1>You got a solar proposal. Now get the truth.</h1>
+      <p class="subtitle">Upload your utility bill or solar proposal and get an instant, unbiased analysis — free. See what solar should actually cost for your Colorado home.</p>
       <div class="trust-bar">
-        <span class="trust-item">100% free</span>
+        <span class="trust-item">100% free — no catch</span>
         <span class="trust-sep"></span>
         <span class="trust-item">AI-powered in 60 seconds</span>
         <span class="trust-sep"></span>
-        <span class="trust-item">No sales pitch, ever</span>
+        <span class="trust-item">No sales pitch, no commission</span>
       </div>
       <div class="social-proof">
         <span class="proof-stat"><strong id="analysis-count">0</strong> analyses completed</span>
@@ -255,20 +263,20 @@
         <h2>Why Trust This Tool?</h2>
         <div class="trust-grid">
           <div class="trust-card">
-            <strong>No sales pitch</strong>
-            <p>We show you the numbers. If solar doesn't make sense for your home, we'll tell you that too.</p>
+            <strong>Independent analysis, not another sales pitch</strong>
+            <p>We don't sell solar. We don't earn commission. We use NREL production data, actual Xcel Energy rates, and real Colorado pricing to grade your proposal on what matters.</p>
           </div>
           <div class="trust-card">
-            <strong>Real data sources</strong>
-            <p>Google Solar API for your roof, NREL PVWatts for production, and your actual utility rates from your bill.</p>
+            <strong>Colorado-specific, not generic</strong>
+            <p>Your solar ROI depends on your Xcel rate plan, Colorado's new net metering credit rates, and the property tax exemption. Generic calculators miss all of this. We don't.</p>
           </div>
           <div class="trust-card">
             <strong>Conservative assumptions</strong>
-            <p>3% rate escalation (Colorado average), 0.5% panel degradation, no expired tax credits. We underestimate, not overestimate.</p>
+            <p>3% rate escalation (Colorado historical average), 0.5% panel degradation, no expired tax credits. We underestimate savings, not overestimate.</p>
           </div>
           <div class="trust-card">
-            <strong>Colorado-focused</strong>
-            <p>Built specifically for Xcel Energy territory with Colorado net metering rules, property tax exemptions, and local rate data.</p>
+            <strong>Free because solar's real problem is cost</strong>
+            <p>Solar companies spend $3,000-6,000 per customer on sales. That cost gets baked into your price. Better-informed homeowners make the whole industry more efficient.</p>
           </div>
         </div>
       </div>
@@ -291,8 +299,8 @@
     <div id="teaser-section" class="hidden">
       <div id="teaser-content"></div>
       <div class="gate-card">
-        <h3>Get your full report</h3>
-        <p>Enter your email and we'll send you the complete analysis with our counter-proposal.</p>
+        <h3>Get your full analysis</h3>
+        <p>We've started your analysis. Enter your email to see the complete report — including $/watt grade, production accuracy check, and Colorado-specific savings estimate.</p>
         <form id="gate-form">
           <input type="email" id="gate-email" placeholder="you@email.com" required>
           <input type="text" id="gate-phone" placeholder="Phone (optional)">
@@ -312,8 +320,8 @@
     <div class="faq-section" id="faq">
       <h2>Frequently Asked Questions</h2>
       <div class="faq-item">
-        <h3>Is this really free?</h3>
-        <p>Yes. Upload your bill or solar quote and get a full analysis at no cost. We make money by offering competitive solar installations to people who want one — not by selling your data.</p>
+        <h3>Why is this free? What's the catch?</h3>
+        <p>Solar companies spend $3,000-6,000 per customer on sales and marketing — and that cost gets built into the price you pay. We built this tool to make the solar buying process more efficient. When homeowners understand fair pricing, they make decisions faster. That efficiency creates value we can build a business around. There's no catch: we don't sell your data and we'll never pressure you to buy anything.</p>
       </div>
       <div class="faq-item">
         <h3>What happens to my documents?</h3>
@@ -346,6 +354,18 @@
       <div class="faq-item">
         <h3>Should I choose Xcel's flat rate or TOU rate with solar?</h3>
         <p>Solar produces most energy during midday, which falls in Xcel's off-peak TOU period. Without a battery, flat rate often yields better solar savings. With a battery, TOU can be more profitable because the battery arbitrages the peak/off-peak spread. Our analysis compares both scenarios.</p>
+      </div>
+      <div class="faq-item">
+        <h3>I already got 3 quotes. Why do I need this?</h3>
+        <p>Three quotes tell you what three companies charge. They don't tell you what solar <em>should</em> cost for your home, whether the production estimates are realistic, or how the financing terms compare to market rates. Think of us as the ruler that measures all your quotes against objective benchmarks — NREL production data, actual Colorado pricing, and real Xcel Energy rates.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Will you try to sell me solar after I use the tool?</h3>
+        <p>No. If your analysis shows you have a good deal, we'll say so and you can move forward with your current installer. If you want to explore other options, we can connect you with vetted Colorado installers — but only if you ask. We will never cold-call you or share your information without your permission.</p>
+      </div>
+      <div class="faq-item">
+        <h3>What if my proposal is actually fine?</h3>
+        <p>Then we'll tell you that. Many proposals we analyze are fairly priced. When that happens, you get the confidence to move forward without second-guessing. That's just as valuable as catching a bad deal.</p>
       </div>
     </div>
 
