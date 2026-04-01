@@ -139,8 +139,17 @@ app.post('/api/analyze-bill', upload.single('bill'), async (req, res) => {
   console.log(`[server] Received bill: ${req.file.originalname} (${req.file.size} bytes)`);
 
   const abortController = createLinkedAbort(req, res);
+
+  // Optional property data for energy efficiency analysis (Phase 2)
+  const propertyData = req.body.yearBuilt ? {
+    yearBuilt: parseInt(req.body.yearBuilt) || null,
+    squareFeet: parseInt(req.body.squareFeet) || null,
+    bedrooms: parseInt(req.body.bedrooms) || null,
+    heatingFuel: req.body.heatingFuel || null, // 'gas' | 'electric' | 'heat_pump'
+  } : null;
+
   try {
-    const result = await analyzeBill(req.file.path, abortController.signal);
+    const result = await analyzeBill(req.file.path, abortController.signal, { propertyData });
     const teaser = generateTeaser('bill', result);
     if (!res.headersSent) {
       res.json({
@@ -148,6 +157,7 @@ app.post('/api/analyze-bill', upload.single('bill'), async (req, res) => {
         analysisData: { savingsResult: result.savingsResult, billData: result.billData },
         location: { lat: result.lat, lon: result.lon },
         roofData: result.roofData || null,
+        efficiencyAnalysis: result.efficiencyAnalysis || null,
       });
     }
   } catch (err) {

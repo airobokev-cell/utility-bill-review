@@ -12,6 +12,7 @@ const { generateReport } = require('../report/generator');
 const { SYSTEM_COST_PER_WATT, ANNUAL_RATE_ESCALATION, XCEL_FLAT_RATE } = require('../constants');
 const { defaultVerification, buildVerificationResult } = require('./verification');
 const { lookupWhitepages } = require('./whitepages');
+const { analyzeEfficiency } = require('./energyAudit');
 
 function throwIfAborted(signal) {
   if (signal?.aborted) {
@@ -78,6 +79,18 @@ async function analyzeBill(pdfPath, signal, options = {}) {
     Promise.resolve(estimateAnnualConsumption(billData)),
   ]);
 
+  // Step 4.5: Energy efficiency analysis
+  throwIfAborted(signal);
+  console.log('[orchestrator] Step 4.5: Analyzing energy efficiency...');
+  let efficiencyAnalysis = null;
+  try {
+    const propertyData = options.propertyData || null;
+    efficiencyAnalysis = analyzeEfficiency(billData, consumptionData, { lat, lon }, propertyData);
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    console.warn(`[orchestrator] Energy audit failed, continuing without it: ${err.message}`);
+  }
+
   // Step 5: System sizing
   throwIfAborted(signal);
   const roughProductionPerKw = lat > 40 ? 1250 : lat > 35 ? 1400 : 1550;
@@ -136,12 +149,13 @@ async function analyzeBill(pdfPath, signal, options = {}) {
     incentives,
     roofData,
     touImpact,
+    efficiencyAnalysis,
     verification: finalVerification,
     mode: 'bill',
   });
 
   console.log('[orchestrator] Bill analysis complete!');
-  return { html: reportHtml, billData, savingsResult, lat, lon, roofData, touImpact };
+  return { html: reportHtml, billData, savingsResult, lat, lon, roofData, touImpact, efficiencyAnalysis };
 }
 
 /**
@@ -289,6 +303,16 @@ async function analyzeBoth(billPdfPath, proposalPdfPath, signal) {
     currentRates
   );
 
+  // Energy efficiency analysis
+  throwIfAborted(signal);
+  let efficiencyAnalysis = null;
+  try {
+    efficiencyAnalysis = analyzeEfficiency(billData, consumptionData, { lat, lon }, null);
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    console.warn(`[orchestrator] Energy audit failed in combined mode: ${err.message}`);
+  }
+
   // Generate combined report
   throwIfAborted(signal);
   const reportHtml = await generateReport({
@@ -303,11 +327,12 @@ async function analyzeBoth(billPdfPath, proposalPdfPath, signal) {
     incentives,
     roofData,
     touImpact,
+    efficiencyAnalysis,
     mode: 'combined',
   });
 
   console.log('[orchestrator] Combined analysis complete!');
-  return { html: reportHtml, billData, proposalData, score, savingsResult, lat, lon, roofData, touImpact };
+  return { html: reportHtml, billData, proposalData, score, savingsResult, lat, lon, roofData, touImpact, efficiencyAnalysis };
 }
 
 module.exports = { analyzeBill, analyzeProposal, analyzeBoth };

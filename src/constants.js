@@ -91,6 +91,12 @@ module.exports = {
   // Heating-driven winters + AC summers, bimodal pattern
   SEASONAL_FACTORS: [1.10, 1.00, 0.85, 0.70, 0.65, 0.80, 1.05, 1.10, 0.85, 0.70, 0.85, 1.05],
 
+  // ── Energy Efficiency Audit Defaults ─────────────────────────────────
+  COLORADO_MEDIAN_ANNUAL_KWH: 7200,  // ~600 kWh/month median for Xcel territory
+  DENVER_ALTITUDE_FT: 5280,          // Altitude affects HVAC performance
+  // Furnaces lose ~4% efficiency per 1,000 ft altitude
+  // Heat pump COP reduction: ~15-20% at Denver altitude vs sea level
+
   // Upload limits
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
 };

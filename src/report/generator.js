@@ -94,7 +94,7 @@ async function generateProposalReport({ proposalData, score, productionData, bat
 
 // ── Bill Report (updated from original) ──────────────────────────────
 
-async function generateBillReport({ billData, savingsResult, currentRates, postSolarRates, incentives, roofData, verification }) {
+async function generateBillReport({ billData, savingsResult, currentRates, postSolarRates, incentives, roofData, verification, efficiencyAnalysis }) {
   const templatePath = path.join(__dirname, 'template-bill.html');
   let html = await fs.readFile(templatePath, 'utf-8');
 
@@ -147,6 +147,7 @@ async function generateBillReport({ billData, savingsResult, currentRates, postS
       savingsResult.monthlyProductionKwh
     ),
     '{{MONTHLY_TABLE}}': buildMonthlyTable(savingsResult.monthlyBreakdown),
+    '{{EFFICIENCY_SECTION}}': buildEfficiencySection(efficiencyAnalysis),
   };
 
   for (const [key, value] of Object.entries(replacements)) {
@@ -271,6 +272,211 @@ function formatNum(num, decimals = 2) {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
+}
+
+// ── Efficiency Section Builder ───────────────────────────────────────
+
+function buildEfficiencySection(efficiencyAnalysis) {
+  if (!efficiencyAnalysis) return '';
+
+  const ea = efficiencyAnalysis;
+  const profile = ea.efficiencyProfile;
+  const peer = ea.peerComparison;
+  const score = ea.efficiencyScore;
+  const anomalies = ea.anomalies;
+  const recs = ea.recommendations;
+  const postUpgrade = ea.postUpgradeAnalysis;
+
+  // Score color
+  let scoreColor = '#22c55e'; // green
+  if (score.score >= 70) scoreColor = '#ef4444'; // red
+  else if (score.score >= 50) scoreColor = '#f59e0b'; // amber
+  else if (score.score >= 30) scoreColor = '#3b82f6'; // blue
+
+  // Score label
+  let scoreLabel = 'Efficient';
+  if (score.score >= 70) scoreLabel = 'High Usage';
+  else if (score.score >= 50) scoreLabel = 'Above Average';
+  else if (score.score >= 30) scoreLabel = 'Average';
+
+  // Build monthly usage bar chart (inline SVG)
+  const months = profile.kwhPerMonth;
+  const maxKwh = Math.max(...months, 1);
+  const baselineY = profile.baseloadMonthlyKwh;
+  const barW = 42;
+  const chartW = 580;
+  const chartH = 160;
+  const gap = (chartW - barW * 12) / 11;
+
+  let barsHtml = '';
+  for (let i = 0; i < 12; i++) {
+    const x = i * (barW + gap);
+    const h = (months[i] / maxKwh) * (chartH - 25);
+    const y = chartH - 20 - h;
+    const isAboveBase = months[i] > baselineY * 1.15;
+    const color = isAboveBase ? '#f59e0b' : '#3b82f6';
+    barsHtml += `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="${color}" opacity="0.8"/>`;
+    barsHtml += `<text x="${x + barW / 2}" y="${chartH - 5}" text-anchor="middle" fill="#6b7280" font-size="10">${MONTH_LABELS[i]}</text>`;
+    if (months[i] > 0) {
+      barsHtml += `<text x="${x + barW / 2}" y="${y - 4}" text-anchor="middle" fill="#6b7280" font-size="9">${months[i]}</text>`;
+    }
+  }
+
+  // Baseline line
+  const baseH = (baselineY / maxKwh) * (chartH - 25);
+  const baseY = chartH - 20 - baseH;
+  barsHtml += `<line x1="0" y1="${baseY}" x2="${chartW}" y2="${baseY}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/>`;
+  barsHtml += `<text x="${chartW}" y="${baseY - 4}" text-anchor="end" fill="#94a3b8" font-size="10">Baseload: ${baselineY} kWh/mo</text>`;
+
+  const usageChart = `<svg viewBox="0 0 ${chartW} ${chartH}" width="100%" style="max-width:${chartW}px; font-family: -apple-system, sans-serif;">${barsHtml}</svg>`;
+
+  // Peer comparison gauge
+  const peerPct = peer.percentile;
+  const gaugeWidth = 300;
+  const needleX = (peerPct / 100) * gaugeWidth;
+  const peerGauge = `<div style="margin: 12px 0;">
+    <div style="position:relative; width:100%; max-width:${gaugeWidth}px; height:24px; background:linear-gradient(90deg, #22c55e 0%, #22c55e 25%, #3b82f6 25%, #3b82f6 50%, #f59e0b 50%, #f59e0b 75%, #ef4444 75%, #ef4444 100%); border-radius:12px; overflow:hidden;">
+      <div style="position:absolute; left:${needleX}px; top:-2px; width:3px; height:28px; background:#0f172a; border-radius:2px;"></div>
+    </div>
+    <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; margin-top:4px; max-width:${gaugeWidth}px;">
+      <span>Efficient</span><span>Average</span><span>Above Avg</span><span>High</span>
+    </div>
+    <p style="font-size:14px; color:#334155; margin-top:8px;">
+      Your home uses <strong>${peer.annualKwh.toLocaleString()} kWh/year</strong>.
+      The median home in your area uses <strong>${peer.medianKwh.toLocaleString()} kWh/year</strong>.
+      ${peer.excessKwh > 0
+        ? `That's <strong>${peer.excessPct}% above average</strong>.`
+        : `That's <strong>below average</strong> — your home is relatively efficient.`}
+    </p>
+  </div>`;
+
+  // Anomalies
+  let anomaliesHtml = '';
+  if (anomalies.length > 0) {
+    anomaliesHtml = anomalies.map(a => {
+      const icon = a.severity === 'high' ? '⚠️' : a.severity === 'moderate' ? '💡' : 'ℹ️';
+      const bg = a.severity === 'high' ? '#fef2f2' : a.severity === 'moderate' ? '#fffbeb' : '#f0f9ff';
+      const border = a.severity === 'high' ? '#fecaca' : a.severity === 'moderate' ? '#fde68a' : '#bfdbfe';
+      return `<div style="padding:12px; background:${bg}; border:1px solid ${border}; border-radius:8px; margin-bottom:8px; font-size:14px; color:#334155;">
+        ${icon} ${a.description}
+      </div>`;
+    }).join('');
+  }
+
+  // Recommendations (Phase 2)
+  let recsHtml = '';
+  if (recs.length > 0) {
+    recsHtml = `<div class="card" style="margin-top:16px;">
+      <div class="card-title">Recommended Efficiency Upgrades</div>
+      <p style="font-size:13px; color:#64748b; margin-bottom:12px;">Based on your home's usage patterns and characteristics. These upgrades could reduce your energy usage and allow a smaller, more cost-effective solar system.</p>
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead><tr style="border-bottom:2px solid #e2e8f0;">
+          <th style="text-align:left; padding:8px 4px; color:#64748b;">Upgrade</th>
+          <th style="text-align:right; padding:8px 4px; color:#64748b;">Est. Cost</th>
+          <th style="text-align:right; padding:8px 4px; color:#64748b;">Xcel Rebate</th>
+          <th style="text-align:right; padding:8px 4px; color:#64748b;">Annual Savings</th>
+          <th style="text-align:right; padding:8px 4px; color:#64748b;">Payback</th>
+        </tr></thead>
+        <tbody>
+        ${recs.map(r => `<tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:8px 4px;">
+            <strong>${r.measure}</strong>${r.requiresMiniAudit ? ' <span style="font-size:11px; color:#f59e0b;">*confirm with walkthrough</span>' : ''}
+            <div style="font-size:12px; color:#94a3b8;">${r.description}</div>
+          </td>
+          <td style="text-align:right; padding:8px 4px; white-space:nowrap;">$${r.costRange.low.toLocaleString()}-$${r.costRange.high.toLocaleString()}</td>
+          <td style="text-align:right; padding:8px 4px; color:#15803d; white-space:nowrap;">${r.xcelRebate > 0 ? `-$${r.xcelRebate}` : '—'}</td>
+          <td style="text-align:right; padding:8px 4px; white-space:nowrap;">~$${r.avgSavingsDollars}/yr<div style="font-size:11px; color:#94a3b8;">${r.avgSavingsKwh} kWh</div></td>
+          <td style="text-align:right; padding:8px 4px; white-space:nowrap;">${r.simplePaybackYears ? `${r.simplePaybackYears} yrs` : '—'}</td>
+        </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+    // Solar sizing comparison (if post-upgrade data exists)
+    if (postUpgrade && postUpgrade.solarSizingImpact.reductionKw > 0) {
+      const impact = postUpgrade.solarSizingImpact;
+      recsHtml += `<div class="card" style="margin-top:16px; background:linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border:1px solid #bfdbfe;">
+        <div class="card-title">Efficiency + Solar: Side-by-Side Comparison</div>
+        <table style="width:100%; border-collapse:collapse; font-size:14px;">
+          <thead><tr style="border-bottom:2px solid #e2e8f0;">
+            <th style="text-align:left; padding:8px;">Approach</th>
+            <th style="text-align:right; padding:8px;">System Size</th>
+            <th style="text-align:right; padding:8px;">Solar Cost</th>
+            <th style="text-align:right; padding:8px;">Efficiency Cost</th>
+            <th style="text-align:right; padding:8px;">Total</th>
+          </tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #e2e8f0;">
+              <td style="padding:8px;">Solar Only</td>
+              <td style="text-align:right; padding:8px;">${impact.currentSystemKw} kW</td>
+              <td style="text-align:right; padding:8px;">$${(impact.currentSystemKw * 1000 * 2.25).toLocaleString()}</td>
+              <td style="text-align:right; padding:8px;">$0</td>
+              <td style="text-align:right; padding:8px; font-weight:600;">$${(impact.currentSystemKw * 1000 * 2.25).toLocaleString()}</td>
+            </tr>
+            <tr style="background:rgba(255,255,255,0.5);">
+              <td style="padding:8px; font-weight:600; color:#15803d;">Efficiency + Right-Sized Solar</td>
+              <td style="text-align:right; padding:8px; color:#15803d;">${impact.postUpgradeSystemKw} kW</td>
+              <td style="text-align:right; padding:8px;">$${(impact.postUpgradeSystemKw * 1000 * 2.25).toLocaleString()}</td>
+              <td style="text-align:right; padding:8px;">$${impact.totalEfficiencyCost.toLocaleString()}</td>
+              <td style="text-align:right; padding:8px; font-weight:600; color:#15803d;">$${((impact.postUpgradeSystemKw * 1000 * 2.25) + impact.totalEfficiencyCost).toLocaleString()}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size:13px; color:#334155; margin-top:12px; padding:0 8px;">${impact.narrative}</p>
+      </div>`;
+    }
+  }
+
+  // Usage breakdown
+  const breakdownHtml = `<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0;">
+    <div style="padding:14px; background:#f8fafc; border-radius:8px; text-align:center;">
+      <div style="font-size:24px; font-weight:700; color:#3b82f6;">${profile.baseloadSharePct}%</div>
+      <div style="font-size:13px; color:#64748b;">Always-On (Baseload)</div>
+      <div style="font-size:12px; color:#94a3b8;">${profile.baseloadMonthlyKwh} kWh/mo</div>
+    </div>
+    <div style="padding:14px; background:#f8fafc; border-radius:8px; text-align:center;">
+      <div style="font-size:24px; font-weight:700; color:#f59e0b;">${100 - profile.baseloadSharePct}%</div>
+      <div style="font-size:13px; color:#64748b;">Weather-Sensitive</div>
+      <div style="font-size:12px; color:#94a3b8;">${Math.round(profile.weatherSensitiveKwh / 12)} kWh/mo avg</div>
+    </div>
+  </div>`;
+
+  return `
+  <!-- Home Energy Profile -->
+  <div class="card">
+    <div class="card-title">
+      Your Home Energy Profile
+      <span style="float:right; font-size:14px; font-weight:600; color:${scoreColor}; background:${scoreColor}15; padding:4px 12px; border-radius:16px;">
+        ${scoreLabel} (${score.score}/100)
+      </span>
+    </div>
+
+    <div style="font-size:13px; color:#64748b; margin-bottom:4px; font-style:italic;">
+      Confidence: ${score.confidence} — ${score.confidenceFactors[0] || ''}
+    </div>
+
+    <!-- Peer Comparison -->
+    <h4 style="font-size:15px; color:#0f172a; margin:16px 0 4px;">How Your Home Compares</h4>
+    ${peerGauge}
+
+    <!-- Usage Breakdown -->
+    <h4 style="font-size:15px; color:#0f172a; margin:16px 0 4px;">Where Your Energy Goes</h4>
+    ${breakdownHtml}
+
+    <!-- Monthly Usage Pattern -->
+    <h4 style="font-size:15px; color:#0f172a; margin:16px 0 4px;">Monthly Usage Pattern</h4>
+    <p style="font-size:12px; color:#94a3b8; margin-bottom:8px;">Blue = near baseload, Amber = weather-driven usage above baseline</p>
+    ${usageChart}
+
+    <!-- Anomalies -->
+    ${anomalies.length > 0 ? `
+    <h4 style="font-size:15px; color:#0f172a; margin:16px 0 8px;">What We Found</h4>
+    ${anomaliesHtml}
+    ` : ''}
+  </div>
+
+  ${recsHtml}
+  `;
 }
 
 module.exports = { generateReport };
