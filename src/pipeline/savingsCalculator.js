@@ -21,56 +21,142 @@ function monthNameToIndex(name) {
 }
 
 /**
- * Get 12-month consumption from actual usage history or estimate from a single bill.
+ * Build a 12-month consumption array using ALL available real data from the bill,
+ * then fill any gaps with a seasonal curve calibrated to the known months.
+ *
+ * Priority order:
+ *   1. Real monthly usage from the bill's usage history bar chart (any months available)
+ *   2. The current bill month's kWh (always available — used as anchor if not in history)
+ *   3. Missing months filled via SEASONAL_FACTORS scaled to match the known data
+ *
+ * If NREL solrad data is provided, we derive a location-specific seasonal curve
+ * instead of using the generic Colorado SEASONAL_FACTORS.
  */
-function estimateAnnualConsumption(billData) {
-  // Prefer actual 12-month history from the bill's bar chart
-  if (billData.usageHistory && billData.usageHistory.length >= 12) {
-    // Sort chronologically by year then month to handle year boundaries correctly
-    const sorted = [...billData.usageHistory].sort((a, b) => {
-      const yearDiff = (a.year || 2024) - (b.year || 2024);
-      if (yearDiff !== 0) return yearDiff;
-      return monthNameToIndex(a.month) - monthNameToIndex(b.month);
-    });
-    const last12 = sorted.slice(-12);
+function estimateAnnualConsumption(billData, nrelSolradMonthly) {
+  const monthlyConsumption = new Array(12).fill(null); // null = unknown
+  const knownMonths = new Set();
 
-    const monthlyConsumption = new Array(12).fill(0);
-    for (const entry of last12) {
-      const monthIdx = monthNameToIndex(entry.month);
-      monthlyConsumption[monthIdx] = Math.round(entry.kWh);
+  // ── Step 1: Load all real months from usage history ─────────────────
+  const billKwh = billData.meterReadings.totalUsageKwh;
+
+  if (billData.usageHistory && billData.usageHistory.length > 0) {
+    // Sanity check: if history values are wildly inconsistent with the bill's kWh,
+    // the history might be gas data (therms/ccf) mislabeled as kWh.
+    // Discard history if average is < 15% of the bill month's kWh.
+    const historyAvg = billData.usageHistory.reduce((s, e) => s + (e.kWh || 0), 0) / billData.usageHistory.length;
+    if (historyAvg > 0 && historyAvg < billKwh * 0.15) {
+      console.warn(`[savingsCalc] Usage history avg (${Math.round(historyAvg)} kWh) is <15% of bill kWh (${billKwh}). Likely gas data — discarding history.`);
+    } else {
+      // Sort chronologically and take the most recent entry per month
+      const sorted = [...billData.usageHistory].sort((a, b) => {
+        const yearDiff = (a.year || 2024) - (b.year || 2024);
+        if (yearDiff !== 0) return yearDiff;
+        return monthNameToIndex(a.month) - monthNameToIndex(b.month);
+      });
+
+      // If we have > 12 entries, take the last 12
+      const recent = sorted.length > 12 ? sorted.slice(-12) : sorted;
+
+      for (const entry of recent) {
+        if (entry.kWh > 0) {
+          const monthIdx = monthNameToIndex(entry.month);
+          monthlyConsumption[monthIdx] = Math.round(entry.kWh);
+          knownMonths.add(monthIdx);
+        }
+      }
     }
-
-    // Validate: bill month's kWh should match the history entry for that month
-    const billKwh = billData.meterReadings.totalUsageKwh;
-    const endDate = new Date(billData.servicePeriod.endDate);
-    const billMonthIdx = endDate.getMonth();
-    const historyVal = monthlyConsumption[billMonthIdx];
-    if (historyVal > 0 && Math.abs(historyVal - billKwh) > billKwh * 0.15) {
-      console.warn(`[savingsCalc] Mismatch: bill says ${billKwh} kWh for ${MONTH_NAMES[billMonthIdx]}, history has ${historyVal}. Using bill value.`);
-      monthlyConsumption[billMonthIdx] = billKwh;
-    }
-
-    const annualConsumption = monthlyConsumption.reduce((s, v) => s + v, 0);
-    console.log(`[savingsCalc] Using actual 12-month history: ${annualConsumption} kWh/year`);
-    console.log(`[savingsCalc] Monthly: ${monthlyConsumption.map((v, i) => `${MONTH_NAMES[i]}=${v}`).join(', ')}`);
-    return { monthlyConsumption, annualConsumption, source: 'history' };
   }
 
-  // Fallback: extrapolate from single bill month using seasonal factors
-  const monthlyUsage = billData.meterReadings.totalUsageKwh;
+  // ── Step 2: Anchor the current bill month (always trust the actual bill) ─
   const endDate = new Date(billData.servicePeriod.endDate);
-  const billMonth = endDate.getMonth();
+  const billMonthIdx = endDate.getMonth();
 
-  const billFactor = SEASONAL_FACTORS[billMonth];
-  const baseMonthly = monthlyUsage / billFactor;
+  if (billKwh > 0) {
+    // If history had a different value for this month, prefer the bill's exact value
+    if (monthlyConsumption[billMonthIdx] !== null &&
+        Math.abs(monthlyConsumption[billMonthIdx] - billKwh) > billKwh * 0.15) {
+      console.warn(`[savingsCalc] Mismatch: bill says ${billKwh} kWh for ${MONTH_NAMES[billMonthIdx]}, history has ${monthlyConsumption[billMonthIdx]}. Using bill value.`);
+    }
+    monthlyConsumption[billMonthIdx] = Math.round(billKwh);
+    knownMonths.add(billMonthIdx);
+  }
 
-  const monthlyConsumption = SEASONAL_FACTORS.map((factor) => Math.round(baseMonthly * factor));
-  const annualConsumption = monthlyConsumption.reduce((sum, v) => sum + v, 0);
+  const knownCount = knownMonths.size;
+  console.log(`[savingsCalc] Real monthly data: ${knownCount}/12 months from bill`);
+  console.log(`[savingsCalc] Known months: ${[...knownMonths].map(i => MONTH_NAMES[i]).join(', ')}`);
 
-  console.log(`[savingsCalc] Extrapolating from bill month ${billMonth} (factor ${billFactor}), base: ${Math.round(baseMonthly)} kWh/mo`);
-  console.log(`[savingsCalc] Estimated annual consumption: ${annualConsumption} kWh`);
+  // ── Step 3: If all 12 months known, we're done ─────────────────────
+  if (knownCount >= 12) {
+    const annualConsumption = monthlyConsumption.reduce((s, v) => s + v, 0);
+    console.log(`[savingsCalc] Full 12-month history: ${annualConsumption} kWh/year`);
+    console.log(`[savingsCalc] Monthly: ${monthlyConsumption.map((v, i) => `${MONTH_NAMES[i]}=${v}`).join(', ')}`);
+    return { monthlyConsumption, annualConsumption, source: 'history', knownMonths: knownCount };
+  }
 
-  return { monthlyConsumption, annualConsumption, source: 'estimated' };
+  // ── Step 4: Build the seasonal curve for gap-filling ───────────────
+  // If NREL solar radiation data is available, derive a consumption curve from it.
+  // Higher solar radiation → warmer → more AC but less heating.
+  // For Colorado (gas heat dominant): consumption correlates with INVERSE of solar
+  // radiation (cold dark months = higher electric for lighting, fans, misc).
+  // But summer AC creates a secondary peak → use a blended U-shaped curve.
+  let seasonalCurve;
+  if (nrelSolradMonthly && nrelSolradMonthly.length === 12) {
+    // Build location-specific curve from NREL TMY solar radiation
+    // Consumption model: baseload + heating_proxy + cooling_proxy
+    // heating_proxy ∝ inverse of solar radiation (cold months)
+    // cooling_proxy ∝ solar radiation above threshold (hot months)
+    const maxSolrad = Math.max(...nrelSolradMonthly);
+    const minSolrad = Math.min(...nrelSolradMonthly);
+    const midSolrad = (maxSolrad + minSolrad) / 2;
+
+    seasonalCurve = nrelSolradMonthly.map((solrad) => {
+      // Heating component: inverse of solar (higher in winter)
+      const heatingProxy = 1 - (solrad - minSolrad) / (maxSolrad - minSolrad);
+      // Cooling component: excess solar above midpoint (higher in summer)
+      const coolingProxy = Math.max(0, (solrad - midSolrad) / (maxSolrad - midSolrad));
+      // Blend: 40% baseload + 30% heating + 30% cooling → U-shaped curve
+      return 0.40 + 0.30 * heatingProxy + 0.30 * coolingProxy;
+    });
+    console.log(`[savingsCalc] Using NREL-derived seasonal curve for gap-filling`);
+  } else {
+    seasonalCurve = SEASONAL_FACTORS;
+    console.log(`[savingsCalc] Using default Colorado seasonal curve for gap-filling`);
+  }
+
+  // ── Step 5: Calibrate the curve to match known months ──────────────
+  // Find the scaling factor: what multiplier on the seasonal curve
+  // best matches the actual kWh values we have?
+  let sumKnownActual = 0;
+  let sumKnownCurve = 0;
+  for (const idx of knownMonths) {
+    sumKnownActual += monthlyConsumption[idx];
+    sumKnownCurve += seasonalCurve[idx];
+  }
+  const scaleFactor = sumKnownActual / sumKnownCurve;
+
+  console.log(`[savingsCalc] Calibration: avg known = ${Math.round(sumKnownActual / knownCount)} kWh/mo, scale factor = ${scaleFactor.toFixed(1)}`);
+
+  // ── Step 6: Fill missing months with calibrated curve ──────────────
+  const filledMonths = [];
+  for (let m = 0; m < 12; m++) {
+    if (monthlyConsumption[m] === null) {
+      monthlyConsumption[m] = Math.round(scaleFactor * seasonalCurve[m]);
+      filledMonths.push(MONTH_NAMES[m]);
+    }
+  }
+
+  if (filledMonths.length > 0) {
+    console.log(`[savingsCalc] Estimated months: ${filledMonths.join(', ')}`);
+  }
+
+  const annualConsumption = monthlyConsumption.reduce((s, v) => s + v, 0);
+  const sourceLabel = knownCount >= 6 ? 'hybrid-majority-real' :
+                      knownCount >= 2 ? 'hybrid-partial' : 'estimated';
+
+  console.log(`[savingsCalc] Annual consumption: ${annualConsumption} kWh/year (${knownCount} real + ${12 - knownCount} estimated months)`);
+  console.log(`[savingsCalc] Monthly: ${monthlyConsumption.map((v, i) => `${MONTH_NAMES[i]}=${v}${knownMonths.has(i) ? '*' : ''}`).join(', ')} (* = real)`);
+
+  return { monthlyConsumption, annualConsumption, source: sourceLabel, knownMonths: knownCount };
 }
 
 /**
@@ -91,7 +177,7 @@ function calculateSystemSize(annualConsumption, roofData, productionPerKw) {
  * Run the full 25-year savings calculation.
  */
 function calculateSavings({ billData, systemSizeKw, panels, productionData, currentRates, postSolarRates, incentives, batteryAnalysis }) {
-  const { monthlyConsumption, annualConsumption, source: consumptionSource } = estimateAnnualConsumption(billData);
+  const { monthlyConsumption, annualConsumption, source: consumptionSource } = estimateAnnualConsumption(billData, productionData.solradMonthly);
   const monthlyProduction = productionData.acMonthly;
 
   // ── Year 1 pre-solar bill (estimated from current rates) ─────────

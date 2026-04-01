@@ -65,16 +65,23 @@ function extractCurrentRates(billData) {
 
   const taxPerKwh = usage > 0 ? taxes.total / usage : 0;
 
+  // Use electricityTotal (actual electric charges) rather than totalAmountDue
+  // which can be $0 due to auto-pay, or include gas charges on combo bills.
+  const electricityTotal = billData.charges?.electricityTotal ||
+    (supply.total + delivery.total + taxes.total) ||
+    billData.totalAmountDue;
+
   const rates = {
     supplyPerKwh: supplyRatePerKwh,
     deliveryVariablePerKwh,
     deliveryFixedMonthly,
     taxPerKwh,
-    totalEffectiveRate: usage > 0 ? billData.totalAmountDue / usage : 0,
+    totalEffectiveRate: usage > 0 ? electricityTotal / usage : 0,
 
     supplyTotal: supply.total,
     deliveryTotal: delivery.total,
     taxesTotal: taxes.total,
+    electricityTotal,
   };
 
   console.log(`[rateStructure] Rates extracted — supply: $${rates.supplyPerKwh.toFixed(5)}/kWh, delivery var: $${rates.deliveryVariablePerKwh.toFixed(5)}/kWh, fixed: $${rates.deliveryFixedMonthly.toFixed(2)}/mo`);

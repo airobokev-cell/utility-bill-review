@@ -71,13 +71,21 @@ async function analyzeBill(pdfPath, signal, options = {}) {
     signal
   );
 
-  // Step 4: Roof + consumption in parallel
+  // Step 4: Roof analysis + NREL reference data (1kW) in parallel
+  // We need NREL solar radiation data BEFORE consumption estimation
+  // so we can build a location-specific seasonal curve for gap-filling.
   throwIfAborted(signal);
-  console.log('[orchestrator] Step 4: Analyzing roof and consumption...');
-  const [roofData, consumptionData] = await Promise.all([
+  console.log('[orchestrator] Step 4: Analyzing roof + fetching NREL climate data...');
+  const [roofData, nrelReference] = await Promise.all([
     analyzeRoof(lat, lon, signal),
-    Promise.resolve(estimateAnnualConsumption(billData)),
+    estimateProduction(lat, lon, 1, signal), // 1kW reference for solrad data
   ]);
+
+  // Step 4.1: Estimate annual consumption using all available bill history
+  // + NREL solar radiation as a seasonal curve for any missing months
+  throwIfAborted(signal);
+  console.log('[orchestrator] Step 4.1: Building 12-month consumption profile...');
+  const consumptionData = estimateAnnualConsumption(billData, nrelReference.solradMonthly);
 
   // Step 4.5: Energy efficiency analysis
   throwIfAborted(signal);
@@ -100,7 +108,7 @@ async function analyzeBill(pdfPath, signal, options = {}) {
     roughProductionPerKw
   );
 
-  // Step 6: Solar production
+  // Step 6: Solar production (now with correct system size)
   throwIfAborted(signal);
   console.log('[orchestrator] Step 5: Estimating solar production...');
   const productionData = await estimateProduction(lat, lon, systemKw, signal);
@@ -265,13 +273,15 @@ async function analyzeBoth(billPdfPath, proposalPdfPath, signal) {
   // Use the competitor's system size for apples-to-apples comparison
   const systemKw = proposalData.system.sizeKw || 8;
 
-  // Production, roof, consumption in parallel
+  // Production, roof in parallel (need NREL solrad for consumption estimation)
   throwIfAborted(signal);
-  const [productionData, roofData, consumptionData] = await Promise.all([
+  const [productionData, roofData] = await Promise.all([
     estimateProduction(lat, lon, systemKw, signal),
     analyzeRoof(lat, lon, signal),
-    Promise.resolve(estimateAnnualConsumption(billData)),
   ]);
+
+  // Build consumption profile using real bill history + NREL seasonal curve
+  const consumptionData = estimateAnnualConsumption(billData, productionData.solradMonthly);
 
   // Score the proposal with REAL rates from the bill
   throwIfAborted(signal);
