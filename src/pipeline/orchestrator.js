@@ -171,10 +171,15 @@ async function analyzeProposal(pdfPath, signal) {
     lon = -104.9903;
   }
 
-  // Step 3: Get solar production estimate for the same system size
+  // Step 3: Analyze the roof using Google Solar API
+  throwIfAborted(signal);
+  console.log('[orchestrator] Step 3: Analyzing roof with Google Solar API...');
+  const roofData = await analyzeRoof(lat, lon, signal);
+
+  // Step 3b: Get solar production estimate for the same system size
   throwIfAborted(signal);
   const systemKw = proposalData.system.sizeKw || 8;
-  console.log('[orchestrator] Step 3: Estimating production for same system size...');
+  console.log('[orchestrator] Step 3b: Estimating production for same system size...');
   const productionData = await estimateProduction(lat, lon, systemKw, signal);
 
   // Step 4: Build rate assumptions
@@ -212,7 +217,7 @@ async function analyzeProposal(pdfPath, signal) {
   });
 
   console.log('[orchestrator] Proposal analysis complete!');
-  return { html: reportHtml, proposalData, score, lat, lon };
+  return { html: reportHtml, proposalData, score, lat, lon, roofData };
 }
 
 /**

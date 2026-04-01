@@ -165,6 +165,7 @@ app.post('/api/analyze-proposal', upload.single('proposal'), async (req, res) =>
         success: true, report: result.html, teaser, mode: 'proposal',
         analysisData: { proposalData: result.proposalData, score: result.score },
         location: { lat: result.lat, lon: result.lon },
+        roofData: result.roofData || null,
       });
     }
   } catch (err) {
