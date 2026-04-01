@@ -220,6 +220,46 @@
         </div>
       </div>
 
+      <!-- Optional Home Details for Energy Efficiency Analysis -->
+      <div id="home-details" class="home-details hidden">
+        <button type="button" id="home-details-toggle" class="home-details-toggle">
+          <span class="toggle-icon">+</span> Add home details for a free energy efficiency analysis
+        </button>
+        <div id="home-details-fields" class="home-details-fields hidden">
+          <p class="home-details-desc">Help us right-size your solar system. If your home is using more energy than it should, we'll show you how to fix that first — and save on solar.</p>
+          <div class="home-details-grid">
+            <div class="field-group">
+              <label for="year-built">Year Built</label>
+              <input type="number" id="year-built" placeholder="e.g. 1985" min="1850" max="2026">
+            </div>
+            <div class="field-group">
+              <label for="sq-feet">Square Feet</label>
+              <input type="number" id="sq-feet" placeholder="e.g. 2200" min="200" max="20000">
+            </div>
+            <div class="field-group">
+              <label for="bedrooms">Bedrooms</label>
+              <select id="bedrooms">
+                <option value="">--</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5+</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="heating-fuel">Heating Type</label>
+              <select id="heating-fuel">
+                <option value="">I'm not sure</option>
+                <option value="gas">Gas Furnace</option>
+                <option value="electric">Electric Heat</option>
+                <option value="heat_pump">Heat Pump</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <button id="analyze-btn" class="hidden" type="button">Analyze</button>
       <p class="privacy-note">Your files are analyzed securely and deleted immediately after. We never store your documents.</p>
 
@@ -435,6 +475,25 @@
     const errorMessage = document.getElementById('error-message');
     const reportSection = document.getElementById('report-section');
 
+    // ── Home Details Toggle ──────────────────────────────────────────
+    const homeDetailsToggle = document.getElementById('home-details-toggle');
+    const homeDetailsFields = document.getElementById('home-details-fields');
+    if (homeDetailsToggle) {
+      homeDetailsToggle.addEventListener('click', () => {
+        const isOpen = homeDetailsFields.classList.toggle('hidden');
+        homeDetailsToggle.classList.toggle('open', !isOpen);
+      });
+    }
+
+    // Show home details section when bill mode is selected (most useful there)
+    function updateHomeDetailsVisibility() {
+      const homeDetails = document.getElementById('home-details');
+      if (homeDetails) {
+        // Show for bill and both modes (where we have usage data)
+        homeDetails.classList.toggle('hidden', currentMode === 'proposal');
+      }
+    }
+
     // ── Tab switching ──────────────────────────────────────────────────
     tabs.forEach((tab) => {
       tab.addEventListener('click', () => {
@@ -446,6 +505,7 @@
         uploadBill.classList.toggle('hidden', currentMode !== 'bill');
         uploadBoth.classList.toggle('hidden', currentMode !== 'both');
         updateAnalyzeButton();
+        updateHomeDetailsVisibility();
       });
     });
 
@@ -517,8 +577,8 @@
 
       const statuses = {
         proposal: ['Reading your solar proposal...', 'Extracting pricing and system details...', 'Checking production estimates...', 'Scoring your deal...', 'Building your report...'],
-        bill: ['Reading your electric bill...', 'Extracting usage and rates...', 'Analyzing your roof...', 'Estimating solar production...', 'Calculating your savings...', 'Building your report...'],
-        both: ['Reading both documents...', 'Extracting all the details...', 'Analyzing your roof and usage...', 'Comparing their quote to ours...', 'Building your full report...'],
+        bill: ['Reading your electric bill...', 'Extracting usage and rates...', 'Analyzing your home energy efficiency...', 'Analyzing your roof...', 'Estimating solar production...', 'Calculating your savings...', 'Building your report...'],
+        both: ['Reading both documents...', 'Extracting all the details...', 'Analyzing your home energy efficiency...', 'Analyzing your roof and usage...', 'Comparing their quote to ours...', 'Building your full report...'],
       };
 
       let statusIdx = 0;
@@ -546,6 +606,16 @@
           formData.append('proposal', files['both-proposal']);
           formData.append('bill', files['both-bill']);
         }
+
+        // Append optional home details for energy efficiency analysis
+        const yearBuilt = document.getElementById('year-built')?.value;
+        const sqFeet = document.getElementById('sq-feet')?.value;
+        const bedrooms = document.getElementById('bedrooms')?.value;
+        const heatingFuel = document.getElementById('heating-fuel')?.value;
+        if (yearBuilt) formData.append('yearBuilt', yearBuilt);
+        if (sqFeet) formData.append('squareFeet', sqFeet);
+        if (bedrooms) formData.append('bedrooms', bedrooms);
+        if (heatingFuel) formData.append('heatingFuel', heatingFuel);
 
         const res = await fetch(endpoint, {
           method: 'POST',
