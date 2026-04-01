@@ -29,6 +29,17 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// ── Clean URL routes for SEO content pages ─────────────────────────────
+app.get('/solar-cost-colorado', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'solar-cost-colorado.html'));
+});
+app.get('/solar-proposal-checklist', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'solar-proposal-checklist.html'));
+});
+app.get('/solar-red-flags', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'solar-red-flags.html'));
+});
+
 const storage = multer.diskStorage({
   destination: uploadsDir,
   filename: (req, file, cb) => {
