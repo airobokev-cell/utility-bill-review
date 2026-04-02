@@ -41,6 +41,17 @@
   <!-- Plausible Analytics with custom events (privacy-friendly, no cookie banner needed) -->
   <script defer data-domain="utilitybillreview.com" src="https://plausible.io/js/script.tagged-events.js"></script>
 
+  <!-- Google Ads Conversion Tracking (gtag.js) -->
+  <!-- TODO: Replace AW-CONVERSION_ID with your actual Google Ads conversion ID -->
+  <!-- Find it at: Google Ads > Goals > Conversions > "Submit lead form" > Tag setup -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-CONVERSION_ID"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'AW-CONVERSION_ID');
+  </script>
+
   <!-- Structured Data: Organization -->
   <script type="application/ld+json">
   {
@@ -844,8 +855,18 @@
       submitBtn.disabled = true;
 
       try {
-        // Track email capture
+        // Track email capture (Plausible)
         trackEvent('EmailCapture', { mode: currentMode });
+
+        // Track Google Ads conversion
+        // TODO: Replace AW-CONVERSION_ID/CONVERSION_LABEL with actual values from Google Ads
+        if (typeof gtag === 'function') {
+          gtag('event', 'conversion', {
+            'send_to': 'AW-CONVERSION_ID/CONVERSION_LABEL',
+            'value': 1.0,
+            'currency': 'USD'
+          });
+        }
 
         // Save lead to server with UTM data and report HTML
         const captureRes = await fetch('/api/capture-lead', {
