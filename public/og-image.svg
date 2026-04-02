@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#1C1C1A"/>
+  <rect x="0" y="0" width="1200" height="4" fill="#D97706"/>
+  <rect x="0" y="626" width="1200" height="4" fill="#D97706"/>
+
+  <!-- Logo triangle -->
+  <polygon points="100,200 130,150 160,200" fill="none" stroke="#D97706" stroke-width="3"/>
+  <circle cx="130" cy="170" r="6" fill="none" stroke="#FAFAF7" stroke-width="1.5"/>
+
+  <text x="180" y="195" fill="#FAFAF7" font-family="Georgia, serif" font-size="28" font-weight="400">Utility Bill Review</text>
+
+  <text x="100" y="320" fill="#FAFAF7" font-family="Georgia, serif" font-size="52" font-weight="400">You got a solar proposal.</text>
+  <text x="100" y="390" fill="#D97706" font-family="Georgia, serif" font-size="52" font-weight="400">Now get the truth.</text>
+
+  <text x="100" y="460" fill="#9A9A92" font-family="Arial, sans-serif" font-size="22">Free AI-powered analysis for Colorado homeowners</text>
+  <text x="100" y="495" fill="#7A7A72" font-family="Arial, sans-serif" font-size="18">NREL production data  ·  Xcel Energy rates  ·  No sales pitch</text>
+
+  <text x="100" y="570" fill="#D97706" font-family="Arial, sans-serif" font-size="20" font-weight="600">utilitybillreview.com</text>
+</svg>

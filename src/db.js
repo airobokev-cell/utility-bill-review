@@ -1,4 +1,5 @@
 const path = require('path');
+const crypto = require('crypto');
 const Database = require('better-sqlite3');
 
 const DB_PATH = process.env.DATABASE_PATH || path.join(__dirname, '..', 'data', 'leads.db');
@@ -38,13 +39,45 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at);
 `);
 
-// Prepared statements
+// ── Schema migrations (safe to run repeatedly) ───────────────────────
+function addColumnIfMissing(table, column, type) {
+  try {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+  } catch {
+    // Column already exists — ignore
+  }
+}
+
+// Lead enrichment columns
+addColumnIfMissing('leads', 'proposal_grade', 'TEXT');
+addColumnIfMissing('leads', 'city', 'TEXT');
+addColumnIfMissing('leads', 'system_size_kw', 'REAL');
+addColumnIfMissing('leads', 'report_token', 'TEXT');
+addColumnIfMissing('leads', 'unsubscribed', 'INTEGER DEFAULT 0');
+
+// Email sequence columns
+addColumnIfMissing('leads', 'email_sequence_step', 'INTEGER DEFAULT 1');
+addColumnIfMissing('leads', 'next_email_at', 'TEXT');
+
+// UTM tracking columns
+addColumnIfMissing('leads', 'utm_source', 'TEXT');
+addColumnIfMissing('leads', 'utm_medium', 'TEXT');
+addColumnIfMissing('leads', 'utm_campaign', 'TEXT');
+
+// Report HTML storage in analyses
+addColumnIfMissing('analyses', 'report_html', 'TEXT');
+
+// Index for report token lookups
+try { db.exec('CREATE INDEX IF NOT EXISTS idx_leads_token ON leads(report_token)'); } catch {}
+
+// ── Prepared statements ──────────────────────────────────────────────
 const insertLead = db.prepare(`
-  INSERT INTO leads (email, phone, mode) VALUES (?, ?, ?)
+  INSERT INTO leads (email, phone, mode, report_token, proposal_grade, city, system_size_kw, utm_source, utm_medium, utm_campaign, next_email_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+2 days'))
 `);
 
 const insertAnalysis = db.prepare(`
-  INSERT INTO analyses (lead_id, mode, summary_json) VALUES (?, ?, ?)
+  INSERT INTO analyses (lead_id, mode, summary_json, report_html) VALUES (?, ?, ?, ?)
 `);
 
 const getLeads = db.prepare(`
@@ -53,6 +86,10 @@ const getLeads = db.prepare(`
 
 const getLeadByEmail = db.prepare(`
   SELECT * FROM leads WHERE email = ? ORDER BY created_at DESC LIMIT 1
+`);
+
+const getLeadByToken = db.prepare(`
+  SELECT * FROM leads WHERE report_token = ? LIMIT 1
 `);
 
 const updateLeadStatus = db.prepare(`
@@ -72,15 +109,55 @@ const getLeadsForFollowUp = db.prepare(`
 
 const getLeadCount = db.prepare(`SELECT COUNT(*) as count FROM leads`);
 
-function saveLead(email, phone, mode) {
-  const result = insertLead.run(email, phone || null, mode || null);
-  console.log(`[db] Saved lead: ${email} (id: ${result.lastInsertRowid})`);
-  return result.lastInsertRowid;
+// Email scheduler queries
+const getLeadsNeedingEmail = db.prepare(`
+  SELECT l.*, a.summary_json, a.report_html
+  FROM leads l
+  LEFT JOIN analyses a ON a.lead_id = l.id AND a.mode = l.mode
+  WHERE l.next_email_at IS NOT NULL
+  AND l.next_email_at <= datetime('now')
+  AND (l.unsubscribed IS NULL OR l.unsubscribed = 0)
+  AND l.email_sequence_step <= 4
+`);
+
+const advanceEmailStep = db.prepare(`
+  UPDATE leads
+  SET email_sequence_step = ?,
+      next_email_at = datetime('now', ?),
+      follow_up_sent_at = CASE WHEN ? = 2 THEN datetime('now') ELSE follow_up_sent_at END
+  WHERE id = ?
+`);
+
+const markUnsubscribed = db.prepare(`
+  UPDATE leads SET unsubscribed = 1, next_email_at = NULL WHERE report_token = ?
+`);
+
+const getAnalysisForLead = db.prepare(`
+  SELECT * FROM analyses WHERE lead_id = ? ORDER BY created_at DESC LIMIT 1
+`);
+
+// ── Public functions ────────────────────────────────────────────────
+function saveLead(email, phone, mode, extra = {}) {
+  const token = crypto.randomBytes(16).toString('hex');
+  const result = insertLead.run(
+    email,
+    phone || null,
+    mode || null,
+    token,
+    extra.proposalGrade || null,
+    extra.city || null,
+    extra.systemSizeKw || null,
+    extra.utmSource || null,
+    extra.utmMedium || null,
+    extra.utmCampaign || null
+  );
+  console.log(`[db] Saved lead: ${email} (id: ${result.lastInsertRowid}, token: ${token.substring(0, 8)}...)`);
+  return { id: result.lastInsertRowid, token };
 }
 
-function saveAnalysis(leadId, mode, summaryData) {
+function saveAnalysis(leadId, mode, summaryData, reportHtml) {
   const json = JSON.stringify(summaryData);
-  insertAnalysis.run(leadId, mode, json);
+  insertAnalysis.run(leadId, mode, json, reportHtml || null);
 }
 
 function getAllLeads() {
@@ -89,6 +166,10 @@ function getAllLeads() {
 
 function findLeadByEmail(email) {
   return getLeadByEmail.get(email);
+}
+
+function findLeadByToken(token) {
+  return getLeadByToken.get(token);
 }
 
 function setLeadStatus(id, status) {
@@ -105,6 +186,23 @@ function getLeadsNeedingFollowUp() {
 
 function getTotalLeadCount() {
   return getLeadCount.get().count;
+}
+
+function getLeadsDueForEmail() {
+  return getLeadsNeedingEmail.all();
+}
+
+function advanceLeadEmail(leadId, nextStep, interval) {
+  // interval like '+3 days', '+7 days', '+21 days'
+  advanceEmailStep.run(nextStep, interval, nextStep, leadId);
+}
+
+function unsubscribeLead(token) {
+  markUnsubscribed.run(token);
+}
+
+function getAnalysis(leadId) {
+  return getAnalysisForLead.get(leadId);
 }
 
 // Migrate existing leads.json if it exists
@@ -135,8 +233,13 @@ module.exports = {
   saveAnalysis,
   getAllLeads,
   findLeadByEmail,
+  findLeadByToken,
   setLeadStatus,
   markFollowUpSent,
   getLeadsNeedingFollowUp,
   getTotalLeadCount,
+  getLeadsDueForEmail,
+  advanceLeadEmail,
+  unsubscribeLead,
+  getAnalysis,
 };

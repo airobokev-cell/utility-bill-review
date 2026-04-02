@@ -33,28 +33,77 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="panel-designer.css">
 
-  <!-- Plausible Analytics (privacy-friendly, no cookie banner needed) -->
-  <script defer data-domain="utilitybillreview.com" src="https://plausible.io/js/script.js"></script>
+  <!-- Open Graph Image -->
+  <meta property="og:image" content="https://www.utilitybillreview.com/og-image.svg">
+  <meta name="twitter:image" content="https://www.utilitybillreview.com/og-image.svg">
+  <meta name="theme-color" content="#1C1C1A">
+
+  <!-- Plausible Analytics with custom events (privacy-friendly, no cookie banner needed) -->
+  <script defer data-domain="utilitybillreview.com" src="https://plausible.io/js/script.tagged-events.js"></script>
+
+  <!-- Structured Data: Organization -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": "https://www.utilitybillreview.com/#organization",
+    "name": "Utility Bill Review",
+    "url": "https://www.utilitybillreview.com",
+    "logo": "https://www.utilitybillreview.com/favicon.svg",
+    "description": "Free AI-powered solar proposal analysis for Colorado homeowners. Upload your solar quote or Xcel Energy bill and get an instant, unbiased grade against NREL production data and real Colorado pricing.",
+    "foundingDate": "2026",
+    "areaServed": {
+      "@type": "State",
+      "name": "Colorado",
+      "sameAs": "https://en.wikipedia.org/wiki/Colorado"
+    },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "email": "your@utilitybillreview.com",
+      "contactType": "customer service"
+    }
+  }
+  </script>
 
   <!-- Structured Data: WebApplication -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "Utility Bill Review",
+    "@id": "https://www.utilitybillreview.com/#app",
+    "name": "Utility Bill Review Solar Proposal Analyzer",
     "url": "https://www.utilitybillreview.com",
-    "description": "Free AI-powered utility bill and solar quote analysis tool for Colorado homeowners. Upload your Xcel Energy bill or solar proposal and get an honest savings report in 60 seconds.",
-    "applicationCategory": "UtilityApplication",
+    "description": "Upload a solar proposal PDF or Xcel Energy bill and receive an AI-generated analysis grading the quote against NREL production estimates, current Colorado market pricing, and actual Xcel Energy rates. Free, independent, and commission-free.",
+    "applicationCategory": "FinanceApplication",
     "operatingSystem": "Web",
+    "isAccessibleForFree": true,
     "offers": {
       "@type": "Offer",
       "price": "0",
       "priceCurrency": "USD"
     },
+    "creator": { "@id": "https://www.utilitybillreview.com/#organization" },
     "areaServed": {
       "@type": "State",
       "name": "Colorado"
-    }
+    },
+    "featureList": "Solar proposal grading, $/watt benchmarking, NREL production validation, Xcel Energy rate modeling, battery ROI analysis, TOU vs flat rate comparison"
+  }
+  </script>
+
+  <!-- Structured Data: HowTo -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to Get a Free Solar Proposal Analysis",
+    "description": "Upload your solar proposal or Xcel Energy bill and get an AI-powered analysis in 60 seconds.",
+    "totalTime": "PT60S",
+    "step": [
+      { "@type": "HowToStep", "position": 1, "name": "Upload", "text": "Drop your Xcel Energy bill or solar proposal PDF." },
+      { "@type": "HowToStep", "position": 2, "name": "Analyze", "text": "Our AI reads your bill, models your roof with Google Solar API, and runs NREL production estimates." },
+      { "@type": "HowToStep", "position": 3, "name": "Compare", "text": "Get an honest report: your current costs, solar savings, battery ROI, and TOU rate impact." }
+    ]
   }
   </script>
 
@@ -110,6 +159,54 @@
         "acceptedAnswer": {
           "@type": "Answer",
           "text": "Under SB 23-258, new net metering customers in Colorado receive credits at a reduced rate rather than full retail. Excess solar generation is credited at approximately 75% of retail rate, with any remaining credits cashed out annually at avoided cost rates."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What happens to my documents?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Your files are analyzed in real-time and deleted immediately after. We never store your utility bills or solar proposals. The only thing we keep is your email (if you choose to share it) so we can send your report."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What utilities do you support?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Our AI can read bills from any US utility including Xcel Energy, ComEd, Duke Energy, PG&E, SCE, and hundreds more. Upload any electric bill PDF and we extract your usage, rates, and charges automatically."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Should I get a battery with solar in Colorado?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "It depends on your rate schedule. With Xcel's TOU-R rate, batteries can earn money through rate arbitrage. They also provide backup during Colorado winter storms. Our analysis models battery economics including degradation over time."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Should I choose Xcel's flat rate or TOU rate with solar?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Solar produces most energy during midday, which falls in Xcel's off-peak TOU period. Without a battery, flat rate often yields better solar savings. With a battery, TOU can be more profitable. Our analysis compares both scenarios."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Will you try to sell me solar after I use the tool?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. If your analysis shows you have a good deal, we'll say so. If you want to explore other options, we can connect you with vetted Colorado installers, but only if you ask. We will never cold-call you or share your information without your permission."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What if my proposal is actually fine?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Then we'll tell you that. Many proposals we analyze are fairly priced. When that happens, you get the confidence to move forward without second-guessing."
         }
       }
     ]
@@ -514,6 +611,19 @@
       } catch {}
     })();
 
+    // ── UTM capture ─────────────────────────────────────────────────────
+    const urlParams = new URLSearchParams(window.location.search);
+    const utmData = {
+      utmSource: urlParams.get('utm_source') || '',
+      utmMedium: urlParams.get('utm_medium') || '',
+      utmCampaign: urlParams.get('utm_campaign') || '',
+    };
+
+    // Plausible custom event helper
+    function trackEvent(name, props) {
+      if (window.plausible) window.plausible(name, { props: props || {} });
+    }
+
     // ── State ──────────────────────────────────────────────────────────
     let currentMode = 'proposal';
     let files = { proposal: null, bill: null, 'both-proposal': null, 'both-bill': null };
@@ -692,6 +802,9 @@
 
         if (!res.ok || !data.success) throw new Error(data.error || 'Analysis failed');
 
+        // Track upload event
+        trackEvent('Upload', { mode: currentMode });
+
         // Stash full report + raw data, show teaser + email gate
         pendingFullReport = data.report;
         pendingTeaser = data.teaser;
@@ -731,12 +844,22 @@
       submitBtn.disabled = true;
 
       try {
-        // Save lead to server
-        await fetch('/api/capture-lead', {
+        // Track email capture
+        trackEvent('EmailCapture', { mode: currentMode });
+
+        // Save lead to server with UTM data and report HTML
+        const captureRes = await fetch('/api/capture-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, phone, mode: currentMode, analysisData: pendingAnalysisData }),
+          body: JSON.stringify({
+            email, phone, mode: currentMode,
+            analysisData: pendingAnalysisData,
+            reportHtml: pendingFullReport,
+            ...utmData,
+          }),
         });
+        const captureData = await captureRes.json();
+        if (captureData.token) window._reportToken = captureData.token;
       } catch (err) {
         // Don't block the report if lead capture fails
         console.warn('Lead capture failed:', err);

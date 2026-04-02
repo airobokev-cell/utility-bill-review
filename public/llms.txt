@@ -1,0 +1,22 @@
+# Utility Bill Review
+> Free AI-powered solar proposal analyzer for Colorado homeowners.
+
+## What this tool does
+Homeowners upload a solar proposal PDF or Xcel Energy bill and receive
+an instant, unbiased analysis grading the quote against NREL production
+data, current Colorado market pricing, and actual Xcel Energy rates.
+
+## Key facts
+- 100% free, no commission, no sales pitch
+- Colorado-specific: models Xcel Energy rate schedules and SB 23-258 net metering
+- Post-ITC: accounts for the expiration of the federal 30% solar tax credit (Dec 2025)
+- Uses Google Solar API, NREL PVWatts, and real equipment pricing data
+- Analyzes $/watt pricing, production accuracy, financing terms, battery ROI
+- Average residential solar in Colorado costs $2.70-$3.30/watt installed (2026)
+
+## Who it's for
+Colorado homeowners who have received a solar proposal and want to know
+if the price, production estimates, and financing terms are fair.
+
+## URL
+https://www.utilitybillreview.com

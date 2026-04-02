@@ -6,8 +6,14 @@ const cors = require('cors');
 const multer = require('multer');
 const { PORT, MAX_FILE_SIZE } = require('./constants');
 const { analyzeBill, analyzeProposal, analyzeBoth } = require('./pipeline/orchestrator');
-const { saveLead, getAllLeads, getTotalLeadCount, saveAnalysis } = require('./db');
-const { sendReportEmail } = require('./email/sendgrid');
+const {
+  saveLead, getAllLeads, getTotalLeadCount, saveAnalysis,
+  findLeadByToken, getLeadsDueForEmail, advanceLeadEmail,
+  unsubscribeLead, getAnalysis, findLeadByEmail,
+} = require('./db');
+const {
+  sendReportEmail, sendDay2Educational, sendDay5Negotiation, sendDay21Referral,
+} = require('./email/sendgrid');
 
 process.on('uncaughtException', (err) => {
   console.error('[server] Uncaught exception:', err.stack || err);
@@ -38,6 +44,48 @@ app.get('/solar-proposal-checklist', (req, res) => {
 });
 app.get('/solar-red-flags', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'solar-red-flags.html'));
+});
+
+// ── Persistent report URL ─────────────────────────────────────────────
+app.get('/report/:token', (req, res) => {
+  const lead = findLeadByToken(req.params.token);
+  if (!lead) {
+    return res.status(404).send(`<!DOCTYPE html><html><head><title>Report Not Found</title>
+      <style>body{font-family:Inter,system-ui,sans-serif;max-width:600px;margin:80px auto;text-align:center;color:#1C1C1A;}
+      a{color:#D97706;}</style></head>
+      <body><h1>Report not found</h1><p>This report link may have expired or is invalid.</p>
+      <p><a href="/">Upload a new document for analysis</a></p></body></html>`);
+  }
+  const analysis = getAnalysis(lead.id);
+  if (!analysis || !analysis.report_html) {
+    return res.redirect('/');
+  }
+  // Serve standalone report page
+  res.send(`<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Solar Analysis — Utility Bill Review</title>
+    <meta name="robots" content="noindex">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>body{margin:0;padding:24px;background:#FAFAF7;font-family:'Inter',system-ui,sans-serif;}
+    .back-link{display:block;max-width:800px;margin:0 auto 16px;font-size:14px;}
+    .back-link a{color:#D97706;text-decoration:none;}</style>
+    <script defer data-domain="utilitybillreview.com" src="https://plausible.io/js/script.tagged-events.js"></script>
+    </head><body>
+    <div class="back-link"><a href="/">&larr; Back to Utility Bill Review</a></div>
+    ${analysis.report_html}
+    </body></html>`);
+});
+
+// ── Unsubscribe endpoint ──────────────────────────────────────────────
+app.get('/unsubscribe/:token', (req, res) => {
+  unsubscribeLead(req.params.token);
+  res.send(`<!DOCTYPE html><html><head><title>Unsubscribed</title>
+    <style>body{font-family:Inter,system-ui,sans-serif;max-width:600px;margin:80px auto;text-align:center;color:#1C1C1A;}
+    a{color:#D97706;}</style></head>
+    <body><h1>You've been unsubscribed</h1>
+    <p>You won't receive any more emails from us.</p>
+    <p><a href="/">Back to Utility Bill Review</a></p></body></html>`);
 });
 
 const storage = multer.diskStorage({
@@ -84,15 +132,38 @@ async function cleanupFiles(...filePaths) {
   }
 }
 
+// Helper: extract grade/city/size from analysis data
+function extractLeadMeta(mode, analysisData) {
+  const meta = {};
+  if (mode === 'proposal' || mode === 'combined') {
+    meta.proposalGrade = analysisData?.score?.overallVerdict || null;
+    meta.city = analysisData?.proposalData?.customer?.city || analysisData?.billData?.customer?.city || null;
+    meta.systemSizeKw = analysisData?.proposalData?.systemSizeKw ||
+      analysisData?.score?.counterProposal?.systemSizeKw || null;
+  } else {
+    meta.city = analysisData?.billData?.customer?.city || null;
+    meta.systemSizeKw = analysisData?.savingsResult?.system?.sizeKw || null;
+  }
+  return meta;
+}
+
 // ── Lead storage (SQLite) ───────────────────────────────────────────
 app.post('/api/capture-lead', express.json(), async (req, res) => {
-  const { email, phone, mode, analysisData } = req.body;
+  const { email, phone, mode, analysisData, reportHtml, utmSource, utmMedium, utmCampaign } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
-  const leadId = saveLead(email, phone, mode);
-  if (analysisData) saveAnalysis(leadId, mode, analysisData);
-  // Send report email (non-blocking)
-  sendReportEmail(email, mode, analysisData).catch(() => {});
-  res.json({ success: true });
+
+  const meta = extractLeadMeta(mode, analysisData);
+  meta.utmSource = utmSource || null;
+  meta.utmMedium = utmMedium || null;
+  meta.utmCampaign = utmCampaign || null;
+
+  const { id: leadId, token } = saveLead(email, phone, mode, meta);
+  if (analysisData) saveAnalysis(leadId, mode, analysisData, reportHtml || null);
+
+  // Send report email with persistent link (non-blocking)
+  sendReportEmail(email, mode, analysisData, token).catch(() => {});
+
+  res.json({ success: true, token });
 });
 
 app.get('/api/leads', (req, res) => {
@@ -112,21 +183,20 @@ app.get('/admin/leads', (req, res) => {
   const total = getTotalLeadCount();
   const html = `<!DOCTYPE html><html><head><title>Leads Admin — Utility Bill Review</title>
     <style>body{font-family:system-ui;max-width:900px;margin:40px auto;padding:0 20px}
-    table{width:100%;border-collapse:collapse}th,td{padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:left}
-    th{background:#f8fafc;font-size:13px;text-transform:uppercase;color:#64748b}
-    .stat{display:inline-block;background:#f0fdf4;padding:8px 16px;border-radius:8px;margin-right:12px;font-weight:600}</style></head>
+    table{width:100%;border-collapse:collapse}th,td{padding:10px 12px;border-bottom:1px solid #E8E6E1;text-align:left}
+    th{background:#F3F2EF;font-size:13px;text-transform:uppercase;color:#7A7A72}
+    .stat{display:inline-block;background:#E8F5EC;padding:8px 16px;border-radius:8px;margin-right:12px;font-weight:600}</style></head>
     <body><h1>Leads Dashboard</h1>
     <p><span class="stat">${total} total leads</span></p>
-    <table><thead><tr><th>ID</th><th>Email</th><th>Phone</th><th>Mode</th><th>Status</th><th>Date</th></tr></thead>
-    <tbody>${leads.map(l => `<tr><td>${l.id}</td><td>${l.email}</td><td>${l.phone || '-'}</td><td>${l.mode || '-'}</td><td>${l.status}</td><td>${l.created_at}</td></tr>`).join('')}</tbody></table></body></html>`;
+    <table><thead><tr><th>ID</th><th>Email</th><th>Phone</th><th>Mode</th><th>Grade</th><th>City</th><th>Source</th><th>Step</th><th>Date</th></tr></thead>
+    <tbody>${leads.map(l => `<tr><td>${l.id}</td><td>${l.email}</td><td>${l.phone || '-'}</td><td>${l.mode || '-'}</td><td>${l.proposal_grade || '-'}</td><td>${l.city || '-'}</td><td>${l.utm_source || 'organic'}</td><td>${l.email_sequence_step || 1}</td><td>${l.created_at}</td></tr>`).join('')}</tbody></table></body></html>`;
   res.send(html);
 });
 
 // ── Public stats (for social proof counter) ───────────────────────────
 app.get('/api/stats', (req, res) => {
   const count = getTotalLeadCount();
-  // Add a base number so it doesn't look empty at launch
-  res.json({ analysesCompleted: count + 127 });
+  res.json({ analysesCompleted: count });
 });
 
 // ── Teaser generators (shown before email gate) ─────────────────────
@@ -273,7 +343,6 @@ app.get('/api/satellite-image', async (req, res) => {
     }
   } catch {}
 
-  // Try Google Maps Static API first, fallback to Solar API data layers
   const staticUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lon}&zoom=${zoom}&size=${size}&maptype=satellite&key=${apiKey}`;
   console.log(`[satellite] Fetching satellite image for ${lat}, ${lon} (zoom ${zoom})`);
 
@@ -298,7 +367,6 @@ app.get('/api/satellite-image', async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.send(buffer);
   } catch (err) {
-    // Return 404 so frontend shows a nice placeholder
     console.error('[satellite] Static Maps API unavailable — enable it at https://console.cloud.google.com/apis/library/static-maps-backend.googleapis.com');
     res.status(404).json({ error: 'Satellite image not available. Enable Maps Static API in Google Cloud Console.' });
   }
@@ -310,7 +378,6 @@ app.post('/api/save-panel-design', express.json(), (req, res) => {
   if (!panels) return res.status(400).json({ error: 'Panel layout required' });
   const designData = { panels, panelCount, systemSizeKw, designSavedAt: new Date().toISOString() };
   if (email) {
-    const { findLeadByEmail } = require('./db');
     const lead = findLeadByEmail(email);
     if (lead) saveAnalysis(lead.id, 'panel-design', designData);
   }
@@ -326,7 +393,6 @@ app.post('/api/generate-excel', express.json({ limit: '2mb' }), async (req, res)
 
     const buffer = await generateExcelReport({ mode, savingsResult, proposalData, score, billData });
 
-    // Build filename from address if available
     let filename = 'Solar-Analysis';
     const addr = billData?.customer?.address || proposalData?.customer?.address;
     if (addr) {
@@ -384,6 +450,42 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
+// ── Email Scheduler (runs every 15 minutes) ─────────────────────────
+function runEmailScheduler() {
+  try {
+    const leads = getLeadsDueForEmail();
+    if (leads.length === 0) return;
+
+    console.log(`[scheduler] Processing ${leads.length} leads due for email`);
+
+    for (const lead of leads) {
+      const step = lead.email_sequence_step || 1;
+      const grade = lead.proposal_grade || 'average';
+      const token = lead.report_token || '';
+
+      // Step 1 = report already sent on capture. Scheduler handles steps 2-4.
+      if (step === 2) {
+        sendDay2Educational(lead.email, token, grade).catch(() => {});
+        advanceLeadEmail(lead.id, 3, '+3 days'); // next email in 3 more days (day 5)
+      } else if (step === 3) {
+        sendDay5Negotiation(lead.email, token, grade, lead.city, lead.system_size_kw).catch(() => {});
+        advanceLeadEmail(lead.id, 4, '+16 days'); // next email in 16 more days (day 21)
+      } else if (step === 4) {
+        sendDay21Referral(lead.email, token).catch(() => {});
+        advanceLeadEmail(lead.id, 5, '+999 days'); // done — no more emails
+      }
+    }
+  } catch (err) {
+    console.error('[scheduler] Error:', err.message);
+  }
+}
+
 app.listen(PORT, () => {
   console.log(`[server] Solar analyzer running at http://localhost:${PORT}`);
+
+  // Start email scheduler — every 15 minutes
+  setInterval(runEmailScheduler, 15 * 60 * 1000);
+  // Run once on startup (after 30 second delay to let everything initialize)
+  setTimeout(runEmailScheduler, 30000);
+  console.log('[scheduler] Email scheduler active (15-minute interval)');
 });
