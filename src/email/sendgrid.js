@@ -4,7 +4,7 @@ if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
-const FROM_EMAIL = process.env.FROM_EMAIL || 'reports@utilitybillreview.com';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'your@utilitybillreview.com';
 const FROM_NAME = 'Utility Bill Review';
 
 async function sendReportEmail(email, mode, analysisData) {
@@ -33,37 +33,37 @@ async function sendReportEmail(email, mode, analysisData) {
   }
 
   const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-      <div style="text-align: center; margin-bottom: 32px;">
-        <h1 style="font-size: 24px; color: #0f172a; margin: 0;">Your Energy Analysis is Ready</h1>
-        <p style="color: #64748b; margin-top: 8px;">from Utility Bill Review</p>
+    <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #FAFAF7;">
+      <div style="text-align: center; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 2px solid #1C1C1A;">
+        <h1 style="font-family: Georgia, 'DM Serif Display', serif; font-size: 24px; color: #1C1C1A; margin: 0; font-weight: 400;">Your Energy Analysis is Ready</h1>
+        <p style="color: #7A7A72; margin-top: 8px; font-size: 14px;">from Utility Bill Review</p>
       </div>
 
-      <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-        <p style="font-size: 16px; color: #334155; line-height: 1.6; margin: 0;">
+      <div style="background: #FFFFFF; border: 1px solid #E8E6E1; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+        <p style="font-size: 16px; color: #3D3D3A; line-height: 1.6; margin: 0;">
           ${highlight || 'Your personalized energy analysis has been completed.'}
         </p>
       </div>
 
       <div style="text-align: center; margin-bottom: 32px;">
-        <a href="https://utilitybillreview.com" style="display: inline-block; background: #2563eb; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+        <a href="https://utilitybillreview.com" style="display: inline-block; background: #D97706; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
           View Full Report
         </a>
       </div>
 
-      <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
-        <h3 style="font-size: 16px; color: #0f172a; margin: 0 0 12px;">What's Next?</h3>
-        <ul style="color: #475569; line-height: 1.8; padding-left: 20px; margin: 0;">
+      <div style="border-top: 1px solid #E8E6E1; padding-top: 20px;">
+        <h3 style="font-family: Georgia, 'DM Serif Display', serif; font-size: 16px; color: #1C1C1A; margin: 0 0 12px; font-weight: 400;">What's Next?</h3>
+        <ul style="color: #3D3D3A; line-height: 1.8; padding-left: 20px; margin: 0; font-size: 15px;">
           <li>Review your full analysis with detailed breakdowns</li>
           <li>Download the Excel report to run your own numbers</li>
           <li>Reply to this email if you have questions — a real person will respond</li>
         </ul>
       </div>
 
-      <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center;">
-        <p style="font-size: 12px; color: #94a3b8;">
+      <div style="margin-top: 32px; padding-top: 20px; border-top: 2px solid #1C1C1A; text-align: center;">
+        <p style="font-size: 12px; color: #9A9A92;">
           Utility Bill Review — Honest energy analysis, no sales pitch.<br>
-          <a href="https://utilitybillreview.com" style="color: #64748b;">utilitybillreview.com</a>
+          <a href="https://utilitybillreview.com" style="color: #7A7A72;">utilitybillreview.com</a>
         </p>
       </div>
     </div>
@@ -91,10 +91,12 @@ async function sendFollowUpDay2(email) {
       from: { email: FROM_EMAIL, name: FROM_NAME },
       subject: '3 Things Your Solar Rep Won\'t Tell You',
       html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-          <h2 style="color: #0f172a;">3 Things Most Solar Reps Won't Tell You</h2>
+        <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #FAFAF7;">
+          <div style="padding-bottom: 16px; border-bottom: 2px solid #1C1C1A; margin-bottom: 24px;">
+            <h2 style="font-family: Georgia, 'DM Serif Display', serif; color: #1C1C1A; font-weight: 400; margin: 0;">3 Things Most Solar Reps Won't Tell You</h2>
+          </div>
 
-          <div style="color: #334155; line-height: 1.8; font-size: 15px;">
+          <div style="color: #3D3D3A; line-height: 1.8; font-size: 15px;">
             <p><strong>1. The federal tax credit (ITC) expired for residential.</strong><br>
             Section 25D ended December 31, 2025. If someone's quoting you a 30% tax credit, ask them to show you the IRS guidance. The only remaining credit (48E) requires tax equity partnerships — most installers can't access it.</p>
 
@@ -105,14 +107,14 @@ async function sendFollowUpDay2(email) {
             The national average is closer to 2-3%. Overstating rate escalation makes solar look better than it is. Run the numbers at 3% and see if it still works for you.</p>
           </div>
 
-          <div style="background: #f0fdf4; border-radius: 12px; padding: 20px; margin-top: 24px;">
-            <p style="margin: 0; color: #166534; font-size: 15px;">
+          <div style="background: #FFFFFF; border: 1px solid #E8E6E1; border-left: 4px solid #D97706; border-radius: 8px; padding: 20px; margin-top: 24px;">
+            <p style="margin: 0; color: #3D3D3A; font-size: 15px;">
               <strong>Want an honest second look at your quote?</strong><br>
-              Upload it at <a href="https://utilitybillreview.com" style="color: #2563eb;">utilitybillreview.com</a> and we'll grade it for free.
+              Upload it at <a href="https://utilitybillreview.com" style="color: #D97706;">utilitybillreview.com</a> and we'll grade it for free.
             </p>
           </div>
 
-          <p style="font-size: 12px; color: #94a3b8; margin-top: 32px; text-align: center;">
+          <p style="font-size: 12px; color: #9A9A92; margin-top: 32px; text-align: center; padding-top: 16px; border-top: 2px solid #1C1C1A;">
             Utility Bill Review — Honest energy analysis, no sales pitch.
           </p>
         </div>

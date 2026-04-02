@@ -1,91 +1,145 @@
 <div class="report">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap');
+
     .report {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       max-width: 800px;
       margin: 0 auto;
-      color: #0f172a;
+      color: #1C1C1A;
       line-height: 1.6;
     }
     .card {
-      background: #fff;
-      border: 1px solid #e2e8f0;
+      background: #FFFFFF;
+      border: 1px solid #E8E6E1;
       border-radius: 12px;
       padding: 24px;
       margin-bottom: 16px;
     }
     .card-title {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #64748b;
+      font-family: 'DM Serif Display', serif;
+      font-size: 15px;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      color: #1C1C1A;
       margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #E8E6E1;
     }
     .hero-card {
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      color: #fff;
-      border-radius: 16px;
+      background: #1C1C1A;
+      color: #FAFAF7;
+      border-radius: 12px;
       padding: 32px;
       margin-bottom: 16px;
       text-align: center;
+      border: 2px solid #1C1C1A;
     }
-    .hero-card .address { opacity: 0.7; font-size: 14px; margin-bottom: 16px; }
-    .hero-card .big-savings { font-size: 48px; font-weight: 700; color: #4ade80; }
-    .hero-card .savings-label { font-size: 15px; opacity: 0.85; margin-top: 4px; }
-    .hero-card .sub-stat { display: flex; justify-content: center; gap: 32px; margin-top: 20px; }
+    .hero-card .address {
+      opacity: 0.6;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .hero-card .big-savings {
+      font-family: 'DM Serif Display', serif;
+      font-size: 48px;
+      font-weight: 400;
+      color: #D97706;
+    }
+    .hero-card .savings-label {
+      font-size: 14px;
+      opacity: 0.7;
+      margin-top: 4px;
+    }
+    .hero-card .sub-stat {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(250,250,247,0.12);
+    }
     .hero-card .sub-stat div { text-align: center; }
-    .hero-card .sub-stat .value { font-size: 22px; font-weight: 600; }
-    .hero-card .sub-stat .label { font-size: 12px; opacity: 0.65; }
+    .hero-card .sub-stat .value {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      font-weight: 400;
+    }
+    .hero-card .sub-stat .label {
+      font-size: 11px;
+      opacity: 0.5;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-top: 2px;
+    }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
     .stat-card {
-      background: #f8fafc;
+      background: #F3F2EF;
       border-radius: 8px;
       padding: 16px;
       text-align: center;
     }
-    .stat-card .value { font-size: 24px; font-weight: 700; color: #0f172a; }
-    .stat-card .value.green { color: #16a34a; }
-    .stat-card .value.blue { color: #3b82f6; }
-    .stat-card .label { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .stat-card .value {
+      font-family: 'DM Serif Display', serif;
+      font-size: 24px;
+      font-weight: 400;
+      color: #1C1C1A;
+    }
+    .stat-card .value.green { color: #3D7A4A; }
+    .stat-card .value.accent { color: #D97706; }
+    .stat-card .label { font-size: 12px; color: #7A7A72; margin-top: 4px; }
 
     .bar-row { display: flex; align-items: center; margin-bottom: 8px; font-size: 14px; }
-    .bar-label { width: 90px; color: #64748b; font-size: 13px; }
-    .bar-track { flex: 1; height: 28px; background: #f1f5f9; border-radius: 6px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 10px; color: #fff; font-weight: 600; font-size: 13px; }
-    .bar-fill.before { background: #ef4444; }
-    .bar-fill.after { background: #22c55e; }
+    .bar-label { width: 90px; color: #7A7A72; font-size: 13px; }
+    .bar-track { flex: 1; height: 28px; background: #F3F2EF; border-radius: 6px; overflow: hidden; }
+    .bar-fill {
+      height: 100%; border-radius: 6px; display: flex; align-items: center;
+      padding-left: 10px; color: #fff; font-weight: 600; font-size: 13px;
+    }
+    .bar-fill.before { background: #C53030; }
+    .bar-fill.after { background: #3D7A4A; }
 
     .monthly-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
     .monthly-table th {
-      background: #f8fafc; padding: 8px 10px; text-align: right;
-      font-weight: 600; color: #374151; border-bottom: 2px solid #e5e7eb;
+      background: #F3F2EF; padding: 8px 10px; text-align: right;
+      font-weight: 600; color: #3D3D3A; border-bottom: 2px solid #E8E6E1;
       font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;
     }
     .monthly-table th:first-child { text-align: left; }
-    .monthly-table td { padding: 6px 10px; text-align: right; border-bottom: 1px solid #f1f5f9; color: #374151; }
+    .monthly-table td { padding: 6px 10px; text-align: right; border-bottom: 1px solid #F3F2EF; color: #3D3D3A; }
     .monthly-table td:first-child { text-align: left; font-weight: 500; }
-    .monthly-table tr:nth-child(even) { background: #fafbfc; }
-    .monthly-table tr.total-row { font-weight: 700; border-top: 2px solid #0f172a; background: #f8fafc; }
-    .monthly-table .net-export { color: #16a34a; }
-    .monthly-table .savings-cell { color: #16a34a; font-weight: 600; }
+    .monthly-table tr:nth-child(even) { background: #FAFAF7; }
+    .monthly-table tr.total-row { font-weight: 700; border-top: 2px solid #1C1C1A; background: #F3F2EF; }
+    .monthly-table .net-export { color: #3D7A4A; }
+    .monthly-table .savings-cell { color: #3D7A4A; font-weight: 600; }
 
     .battery-tag {
       display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
     }
-    .battery-tag.yes { background: #dcfce7; color: #16a34a; }
-    .battery-tag.no { background: #f1f5f9; color: #64748b; }
+    .battery-tag.yes { background: #E8F5EC; color: #3D7A4A; }
+    .battery-tag.no { background: #F3F2EF; color: #7A7A72; }
 
     .cta-card {
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      color: #fff; border-radius: 12px; padding: 28px; text-align: center; margin-top: 24px;
+      background: #1C1C1A;
+      color: #FAFAF7;
+      border-radius: 12px;
+      padding: 28px;
+      text-align: center;
+      margin-top: 24px;
     }
-    .cta-card h3 { font-size: 20px; margin-bottom: 8px; }
-    .cta-card p { opacity: 0.85; font-size: 15px; }
+    .cta-card h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+    .cta-card p { opacity: 0.7; font-size: 14px; }
 
-    .disclaimer { font-size: 11px; color: #94a3b8; margin-top: 20px; line-height: 1.5; }
+    .disclaimer { font-size: 11px; color: #9A9A92; margin-top: 20px; line-height: 1.5; }
 
     @media (max-width: 600px) {
       .grid-2 { grid-template-columns: 1fr; }
@@ -106,7 +160,7 @@
         <div class="label">Current bill</div>
       </div>
       <div>
-        <div class="value" style="color: #4ade80;">${{AVG_MONTHLY_POST}}</div>
+        <div class="value" style="color: #D97706;">${{AVG_MONTHLY_POST}}</div>
         <div class="label">With solar</div>
       </div>
       <div>
@@ -137,15 +191,15 @@
     <div class="card-title">Your Solar System</div>
     <div class="grid-3">
       <div class="stat-card">
-        <div class="value blue">{{SYSTEM_SIZE_KW}} kW</div>
+        <div class="value accent">{{SYSTEM_SIZE_KW}} kW</div>
         <div class="label">{{PANEL_COUNT}} panels</div>
       </div>
       <div class="stat-card">
-        <div class="value blue">{{OFFSET_PCT}}%</div>
+        <div class="value accent">{{OFFSET_PCT}}%</div>
         <div class="label">Bill offset</div>
       </div>
       <div class="stat-card">
-        <div class="value blue">{{ANNUAL_PRODUCTION}}</div>
+        <div class="value accent">{{ANNUAL_PRODUCTION}}</div>
         <div class="label">kWh/year</div>
       </div>
     </div>
@@ -168,8 +222,8 @@
         <div class="label">Payback period</div>
       </div>
     </div>
-    <p style="margin-top: 12px; font-size: 14px; color: #64748b; text-align: center;">
-      25-year total savings: <strong style="color: #16a34a;">${{TOTAL_25YR_SAVINGS}}</strong> &middot; No tax credit needed
+    <p style="margin-top: 12px; font-size: 14px; color: #7A7A72; text-align: center;">
+      25-year total savings: <strong style="color: #3D7A4A;">${{TOTAL_25YR_SAVINGS}}</strong> &middot; No tax credit needed
     </p>
   </div>
 
@@ -191,8 +245,8 @@
     <div style="margin-bottom: 8px;">
       <span class="battery-tag {{BATTERY_TAG_CLASS}}">{{BATTERY_VERDICT}}</span>
     </div>
-    <p style="font-size: 14px; color: #475569;">{{BATTERY_SUMMARY}}</p>
-    <p style="font-size: 13px; color: #94a3b8; margin-top: 8px;">Add-on: ${{BATTERY_COST}} for 13.5 kWh &middot; ~{{BATTERY_PAYBACK}} payback</p>
+    <p style="font-size: 14px; color: #5A5A52;">{{BATTERY_SUMMARY}}</p>
+    <p style="font-size: 13px; color: #9A9A92; margin-top: 8px;">Add-on: ${{BATTERY_COST}} for 13.5 kWh &middot; ~{{BATTERY_PAYBACK}} payback</p>
   </div>
 
   <!-- CTA -->

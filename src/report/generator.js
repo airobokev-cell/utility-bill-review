@@ -192,29 +192,29 @@ function buildMonthlyChart(consumption, production) {
   for (let i = 0; i <= gridSteps; i++) {
     const val = Math.round(gridInterval * i);
     const y = scaleY(val);
-    gridLines += `<line x1="${pad.left}" y1="${y}" x2="${W - pad.right}" y2="${y}" stroke="#e5e7eb" stroke-width="1"/>`;
-    gridLines += `<text x="${pad.left - 8}" y="${y + 4}" text-anchor="end" fill="#9ca3af" font-size="11">${val.toLocaleString()}</text>`;
+    gridLines += `<line x1="${pad.left}" y1="${y}" x2="${W - pad.right}" y2="${y}" stroke="#E8E6E1" stroke-width="1"/>`;
+    gridLines += `<text x="${pad.left - 8}" y="${y + 4}" text-anchor="end" fill="#9A9A92" font-size="11">${val.toLocaleString()}</text>`;
   }
 
   let xLabels = '';
   for (let i = 0; i < 12; i++) {
-    xLabels += `<text x="${scaleX(i)}" y="${H - pad.bottom + 20}" text-anchor="middle" fill="#6b7280" font-size="11">${MONTH_LABELS[i]}</text>`;
+    xLabels += `<text x="${scaleX(i)}" y="${H - pad.bottom + 20}" text-anchor="middle" fill="#7A7A72" font-size="11">${MONTH_LABELS[i]}</text>`;
   }
 
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px; font-family: -apple-system, sans-serif;">
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px; font-family: 'Inter', -apple-system, sans-serif;">
     ${gridLines}
-    <polygon points="${consumptionFill}" fill="rgba(239,68,68,0.08)"/>
-    <polygon points="${productionFill}" fill="rgba(34,197,94,0.08)"/>
-    <polyline points="${consumptionPoints}" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linejoin="round"/>
-    <polyline points="${productionPoints}" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linejoin="round"/>
-    ${consumption.map((v, i) => `<circle cx="${scaleX(i)}" cy="${scaleY(v)}" r="3" fill="#ef4444"/>`).join('')}
-    ${production.map((v, i) => `<circle cx="${scaleX(i)}" cy="${scaleY(v)}" r="3" fill="#22c55e"/>`).join('')}
+    <polygon points="${consumptionFill}" fill="rgba(197,48,48,0.06)"/>
+    <polygon points="${productionFill}" fill="rgba(61,122,74,0.06)"/>
+    <polyline points="${consumptionPoints}" fill="none" stroke="#C53030" stroke-width="2.5" stroke-linejoin="round"/>
+    <polyline points="${productionPoints}" fill="none" stroke="#3D7A4A" stroke-width="2.5" stroke-linejoin="round"/>
+    ${consumption.map((v, i) => `<circle cx="${scaleX(i)}" cy="${scaleY(v)}" r="3" fill="#C53030"/>`).join('')}
+    ${production.map((v, i) => `<circle cx="${scaleX(i)}" cy="${scaleY(v)}" r="3" fill="#3D7A4A"/>`).join('')}
     ${xLabels}
-    <text x="${pad.left}" y="${H - 2}" fill="#9ca3af" font-size="10">kWh</text>
-    <line x1="${W - pad.right - 120}" y1="${pad.top}" x2="${W - pad.right - 100}" y2="${pad.top}" stroke="#ef4444" stroke-width="2.5"/>
-    <text x="${W - pad.right - 95}" y="${pad.top + 4}" fill="#6b7280" font-size="11">Your Usage</text>
-    <line x1="${W - pad.right - 120}" y1="${pad.top + 18}" x2="${W - pad.right - 100}" y2="${pad.top + 18}" stroke="#22c55e" stroke-width="2.5"/>
-    <text x="${W - pad.right - 95}" y="${pad.top + 22}" fill="#6b7280" font-size="11">Solar Production</text>
+    <text x="${pad.left}" y="${H - 2}" fill="#9A9A92" font-size="10">kWh</text>
+    <line x1="${W - pad.right - 120}" y1="${pad.top}" x2="${W - pad.right - 100}" y2="${pad.top}" stroke="#C53030" stroke-width="2.5"/>
+    <text x="${W - pad.right - 95}" y="${pad.top + 4}" fill="#7A7A72" font-size="11">Your Usage</text>
+    <line x1="${W - pad.right - 120}" y1="${pad.top + 18}" x2="${W - pad.right - 100}" y2="${pad.top + 18}" stroke="#3D7A4A" stroke-width="2.5"/>
+    <text x="${W - pad.right - 95}" y="${pad.top + 22}" fill="#7A7A72" font-size="11">Solar Production</text>
   </svg>`;
 }
 
@@ -288,10 +288,10 @@ function buildEfficiencySection(efficiencyAnalysis) {
   const postUpgrade = ea.postUpgradeAnalysis;
 
   // Score color
-  let scoreColor = '#22c55e'; // green
-  if (score.score >= 70) scoreColor = '#ef4444'; // red
-  else if (score.score >= 50) scoreColor = '#f59e0b'; // amber
-  else if (score.score >= 30) scoreColor = '#3b82f6'; // blue
+  let scoreColor = '#3D7A4A'; // sage green
+  if (score.score >= 70) scoreColor = '#C53030'; // red
+  else if (score.score >= 50) scoreColor = '#D97706'; // amber
+  else if (score.score >= 30) scoreColor = '#7A7A72'; // muted
 
   // Score label
   let scoreLabel = 'Efficient';
@@ -314,34 +314,34 @@ function buildEfficiencySection(efficiencyAnalysis) {
     const h = (months[i] / maxKwh) * (chartH - 25);
     const y = chartH - 20 - h;
     const isAboveBase = months[i] > baselineY * 1.15;
-    const color = isAboveBase ? '#f59e0b' : '#3b82f6';
-    barsHtml += `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="${color}" opacity="0.8"/>`;
-    barsHtml += `<text x="${x + barW / 2}" y="${chartH - 5}" text-anchor="middle" fill="#6b7280" font-size="10">${MONTH_LABELS[i]}</text>`;
+    const color = isAboveBase ? '#D97706' : '#1C1C1A';
+    barsHtml += `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="${color}" opacity="${isAboveBase ? '0.7' : '0.25'}"/>`;
+    barsHtml += `<text x="${x + barW / 2}" y="${chartH - 5}" text-anchor="middle" fill="#7A7A72" font-size="10">${MONTH_LABELS[i]}</text>`;
     if (months[i] > 0) {
-      barsHtml += `<text x="${x + barW / 2}" y="${y - 4}" text-anchor="middle" fill="#6b7280" font-size="9">${months[i]}</text>`;
+      barsHtml += `<text x="${x + barW / 2}" y="${y - 4}" text-anchor="middle" fill="#7A7A72" font-size="9">${months[i]}</text>`;
     }
   }
 
   // Baseline line
   const baseH = (baselineY / maxKwh) * (chartH - 25);
   const baseY = chartH - 20 - baseH;
-  barsHtml += `<line x1="0" y1="${baseY}" x2="${chartW}" y2="${baseY}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3"/>`;
-  barsHtml += `<text x="${chartW}" y="${baseY - 4}" text-anchor="end" fill="#94a3b8" font-size="10">Baseload: ${baselineY} kWh/mo</text>`;
+  barsHtml += `<line x1="0" y1="${baseY}" x2="${chartW}" y2="${baseY}" stroke="#9A9A92" stroke-width="1" stroke-dasharray="4,3"/>`;
+  barsHtml += `<text x="${chartW}" y="${baseY - 4}" text-anchor="end" fill="#9A9A92" font-size="10">Baseload: ${baselineY} kWh/mo</text>`;
 
-  const usageChart = `<svg viewBox="0 0 ${chartW} ${chartH}" width="100%" style="max-width:${chartW}px; font-family: -apple-system, sans-serif;">${barsHtml}</svg>`;
+  const usageChart = `<svg viewBox="0 0 ${chartW} ${chartH}" width="100%" style="max-width:${chartW}px; font-family: 'Inter', -apple-system, sans-serif;">${barsHtml}</svg>`;
 
   // Peer comparison gauge
   const peerPct = peer.percentile;
   const gaugeWidth = 300;
   const needleX = (peerPct / 100) * gaugeWidth;
   const peerGauge = `<div style="margin: 12px 0;">
-    <div style="position:relative; width:100%; max-width:${gaugeWidth}px; height:24px; background:linear-gradient(90deg, #22c55e 0%, #22c55e 25%, #3b82f6 25%, #3b82f6 50%, #f59e0b 50%, #f59e0b 75%, #ef4444 75%, #ef4444 100%); border-radius:12px; overflow:hidden;">
-      <div style="position:absolute; left:${needleX}px; top:-2px; width:3px; height:28px; background:#0f172a; border-radius:2px;"></div>
+    <div style="position:relative; width:100%; max-width:${gaugeWidth}px; height:24px; background:linear-gradient(90deg, #3D7A4A 0%, #3D7A4A 25%, #7A7A72 25%, #7A7A72 50%, #D97706 50%, #D97706 75%, #C53030 75%, #C53030 100%); border-radius:12px; overflow:hidden;">
+      <div style="position:absolute; left:${needleX}px; top:-2px; width:3px; height:28px; background:#1C1C1A; border-radius:2px;"></div>
     </div>
-    <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; margin-top:4px; max-width:${gaugeWidth}px;">
+    <div style="display:flex; justify-content:space-between; font-size:11px; color:#9A9A92; margin-top:4px; max-width:${gaugeWidth}px;">
       <span>Efficient</span><span>Average</span><span>Above Avg</span><span>High</span>
     </div>
-    <p style="font-size:14px; color:#334155; margin-top:8px;">
+    <p style="font-size:14px; color:#3D3D3A; margin-top:8px;">
       Your home uses <strong>${peer.annualKwh.toLocaleString()} kWh/year</strong>.
       The median home in your area uses <strong>${peer.medianKwh.toLocaleString()} kWh/year</strong>.
       ${peer.excessKwh > 0
@@ -355,9 +355,9 @@ function buildEfficiencySection(efficiencyAnalysis) {
   if (anomalies.length > 0) {
     anomaliesHtml = anomalies.map(a => {
       const icon = a.severity === 'high' ? '⚠️' : a.severity === 'moderate' ? '💡' : 'ℹ️';
-      const bg = a.severity === 'high' ? '#fef2f2' : a.severity === 'moderate' ? '#fffbeb' : '#f0f9ff';
-      const border = a.severity === 'high' ? '#fecaca' : a.severity === 'moderate' ? '#fde68a' : '#bfdbfe';
-      return `<div style="padding:12px; background:${bg}; border:1px solid ${border}; border-radius:8px; margin-bottom:8px; font-size:14px; color:#334155;">
+      const bg = a.severity === 'high' ? '#FDF2F2' : a.severity === 'moderate' ? '#FDF8EF' : '#F3F2EF';
+      const border = a.severity === 'high' ? '#E8C4C4' : a.severity === 'moderate' ? '#E8D9C0' : '#E8E6E1';
+      return `<div style="padding:12px; background:${bg}; border:1px solid ${border}; border-radius:8px; margin-bottom:8px; font-size:14px; color:#3D3D3A;">
         ${icon} ${a.description}
       </div>`;
     }).join('');
@@ -368,24 +368,24 @@ function buildEfficiencySection(efficiencyAnalysis) {
   if (recs.length > 0) {
     recsHtml = `<div class="card" style="margin-top:16px;">
       <div class="card-title">Recommended Efficiency Upgrades</div>
-      <p style="font-size:13px; color:#64748b; margin-bottom:12px;">Based on your home's usage patterns and characteristics. These upgrades could reduce your energy usage and allow a smaller, more cost-effective solar system.</p>
+      <p style="font-size:13px; color:#7A7A72; margin-bottom:12px;">Based on your home's usage patterns and characteristics. These upgrades could reduce your energy usage and allow a smaller, more cost-effective solar system.</p>
       <table style="width:100%; border-collapse:collapse; font-size:13px;">
-        <thead><tr style="border-bottom:2px solid #e2e8f0;">
-          <th style="text-align:left; padding:8px 4px; color:#64748b;">Upgrade</th>
-          <th style="text-align:right; padding:8px 4px; color:#64748b;">Est. Cost</th>
-          <th style="text-align:right; padding:8px 4px; color:#64748b;">Xcel Rebate</th>
-          <th style="text-align:right; padding:8px 4px; color:#64748b;">Annual Savings</th>
-          <th style="text-align:right; padding:8px 4px; color:#64748b;">Payback</th>
+        <thead><tr style="border-bottom:2px solid #E8E6E1;">
+          <th style="text-align:left; padding:8px 4px; color:#7A7A72;">Upgrade</th>
+          <th style="text-align:right; padding:8px 4px; color:#7A7A72;">Est. Cost</th>
+          <th style="text-align:right; padding:8px 4px; color:#7A7A72;">Xcel Rebate</th>
+          <th style="text-align:right; padding:8px 4px; color:#7A7A72;">Annual Savings</th>
+          <th style="text-align:right; padding:8px 4px; color:#7A7A72;">Payback</th>
         </tr></thead>
         <tbody>
-        ${recs.map(r => `<tr style="border-bottom:1px solid #f1f5f9;">
+        ${recs.map(r => `<tr style="border-bottom:1px solid #F3F2EF;">
           <td style="padding:8px 4px;">
-            <strong>${r.measure}</strong>${r.requiresMiniAudit ? ' <span style="font-size:11px; color:#f59e0b;">*confirm with walkthrough</span>' : ''}
-            <div style="font-size:12px; color:#94a3b8;">${r.description}</div>
+            <strong>${r.measure}</strong>${r.requiresMiniAudit ? ' <span style="font-size:11px; color:#D97706;">*confirm with walkthrough</span>' : ''}
+            <div style="font-size:12px; color:#9A9A92;">${r.description}</div>
           </td>
           <td style="text-align:right; padding:8px 4px; white-space:nowrap;">$${r.costRange.low.toLocaleString()}-$${r.costRange.high.toLocaleString()}</td>
-          <td style="text-align:right; padding:8px 4px; color:#15803d; white-space:nowrap;">${r.xcelRebate > 0 ? `-$${r.xcelRebate}` : '—'}</td>
-          <td style="text-align:right; padding:8px 4px; white-space:nowrap;">~$${r.avgSavingsDollars}/yr<div style="font-size:11px; color:#94a3b8;">${r.avgSavingsKwh} kWh</div></td>
+          <td style="text-align:right; padding:8px 4px; color:#3D7A4A; white-space:nowrap;">${r.xcelRebate > 0 ? `-$${r.xcelRebate}` : '—'}</td>
+          <td style="text-align:right; padding:8px 4px; white-space:nowrap;">~$${r.avgSavingsDollars}/yr<div style="font-size:11px; color:#9A9A92;">${r.avgSavingsKwh} kWh</div></td>
           <td style="text-align:right; padding:8px 4px; white-space:nowrap;">${r.simplePaybackYears ? `${r.simplePaybackYears} yrs` : '—'}</td>
         </tr>`).join('')}
         </tbody>
@@ -395,10 +395,10 @@ function buildEfficiencySection(efficiencyAnalysis) {
     // Solar sizing comparison (if post-upgrade data exists)
     if (postUpgrade && postUpgrade.solarSizingImpact.reductionKw > 0) {
       const impact = postUpgrade.solarSizingImpact;
-      recsHtml += `<div class="card" style="margin-top:16px; background:linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border:1px solid #bfdbfe;">
+      recsHtml += `<div class="card" style="margin-top:16px; background:#FAFAF7; border:1px solid #E8E6E1;">
         <div class="card-title">Efficiency + Solar: Side-by-Side Comparison</div>
         <table style="width:100%; border-collapse:collapse; font-size:14px;">
-          <thead><tr style="border-bottom:2px solid #e2e8f0;">
+          <thead><tr style="border-bottom:2px solid #E8E6E1;">
             <th style="text-align:left; padding:8px;">Approach</th>
             <th style="text-align:right; padding:8px;">System Size</th>
             <th style="text-align:right; padding:8px;">Solar Cost</th>
@@ -406,7 +406,7 @@ function buildEfficiencySection(efficiencyAnalysis) {
             <th style="text-align:right; padding:8px;">Total</th>
           </tr></thead>
           <tbody>
-            <tr style="border-bottom:1px solid #e2e8f0;">
+            <tr style="border-bottom:1px solid #E8E6E1;">
               <td style="padding:8px;">Solar Only</td>
               <td style="text-align:right; padding:8px;">${impact.currentSystemKw} kW</td>
               <td style="text-align:right; padding:8px;">$${(impact.currentSystemKw * 1000 * 2.25).toLocaleString()}</td>
@@ -414,30 +414,30 @@ function buildEfficiencySection(efficiencyAnalysis) {
               <td style="text-align:right; padding:8px; font-weight:600;">$${(impact.currentSystemKw * 1000 * 2.25).toLocaleString()}</td>
             </tr>
             <tr style="background:rgba(255,255,255,0.5);">
-              <td style="padding:8px; font-weight:600; color:#15803d;">Efficiency + Right-Sized Solar</td>
-              <td style="text-align:right; padding:8px; color:#15803d;">${impact.postUpgradeSystemKw} kW</td>
+              <td style="padding:8px; font-weight:600; color:#3D7A4A;">Efficiency + Right-Sized Solar</td>
+              <td style="text-align:right; padding:8px; color:#3D7A4A;">${impact.postUpgradeSystemKw} kW</td>
               <td style="text-align:right; padding:8px;">$${(impact.postUpgradeSystemKw * 1000 * 2.25).toLocaleString()}</td>
               <td style="text-align:right; padding:8px;">$${impact.totalEfficiencyCost.toLocaleString()}</td>
-              <td style="text-align:right; padding:8px; font-weight:600; color:#15803d;">$${((impact.postUpgradeSystemKw * 1000 * 2.25) + impact.totalEfficiencyCost).toLocaleString()}</td>
+              <td style="text-align:right; padding:8px; font-weight:600; color:#3D7A4A;">$${((impact.postUpgradeSystemKw * 1000 * 2.25) + impact.totalEfficiencyCost).toLocaleString()}</td>
             </tr>
           </tbody>
         </table>
-        <p style="font-size:13px; color:#334155; margin-top:12px; padding:0 8px;">${impact.narrative}</p>
+        <p style="font-size:13px; color:#3D3D3A; margin-top:12px; padding:0 8px;">${impact.narrative}</p>
       </div>`;
     }
   }
 
   // Usage breakdown
   const breakdownHtml = `<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0;">
-    <div style="padding:14px; background:#f8fafc; border-radius:8px; text-align:center;">
-      <div style="font-size:24px; font-weight:700; color:#3b82f6;">${profile.baseloadSharePct}%</div>
-      <div style="font-size:13px; color:#64748b;">Always-On (Baseload)</div>
-      <div style="font-size:12px; color:#94a3b8;">${profile.baseloadMonthlyKwh} kWh/mo</div>
+    <div style="padding:14px; background:#F3F2EF; border-radius:8px; text-align:center;">
+      <div style="font-family:'DM Serif Display',serif; font-size:24px; font-weight:400; color:#1C1C1A;">${profile.baseloadSharePct}%</div>
+      <div style="font-size:13px; color:#7A7A72;">Always-On (Baseload)</div>
+      <div style="font-size:12px; color:#9A9A92;">${profile.baseloadMonthlyKwh} kWh/mo</div>
     </div>
-    <div style="padding:14px; background:#f8fafc; border-radius:8px; text-align:center;">
-      <div style="font-size:24px; font-weight:700; color:#f59e0b;">${100 - profile.baseloadSharePct}%</div>
-      <div style="font-size:13px; color:#64748b;">Weather-Sensitive</div>
-      <div style="font-size:12px; color:#94a3b8;">${Math.round(profile.weatherSensitiveKwh / 12)} kWh/mo avg</div>
+    <div style="padding:14px; background:#F3F2EF; border-radius:8px; text-align:center;">
+      <div style="font-family:'DM Serif Display',serif; font-size:24px; font-weight:400; color:#D97706;">${100 - profile.baseloadSharePct}%</div>
+      <div style="font-size:13px; color:#7A7A72;">Weather-Sensitive</div>
+      <div style="font-size:12px; color:#9A9A92;">${Math.round(profile.weatherSensitiveKwh / 12)} kWh/mo avg</div>
     </div>
   </div>`;
 
@@ -451,26 +451,26 @@ function buildEfficiencySection(efficiencyAnalysis) {
       </span>
     </div>
 
-    <div style="font-size:13px; color:#64748b; margin-bottom:4px; font-style:italic;">
+    <div style="font-size:13px; color:#7A7A72; margin-bottom:4px; font-style:italic;">
       Confidence: ${score.confidence} — ${score.confidenceFactors[0] || ''}
     </div>
 
     <!-- Peer Comparison -->
-    <h4 style="font-size:15px; color:#0f172a; margin:16px 0 4px;">How Your Home Compares</h4>
+    <h4 style="font-family:'DM Serif Display',serif; font-size:15px; font-weight:400; color:#1C1C1A; margin:16px 0 4px;">How Your Home Compares</h4>
     ${peerGauge}
 
     <!-- Usage Breakdown -->
-    <h4 style="font-size:15px; color:#0f172a; margin:16px 0 4px;">Where Your Energy Goes</h4>
+    <h4 style="font-family:'DM Serif Display',serif; font-size:15px; font-weight:400; color:#1C1C1A; margin:16px 0 4px;">Where Your Energy Goes</h4>
     ${breakdownHtml}
 
     <!-- Monthly Usage Pattern -->
-    <h4 style="font-size:15px; color:#0f172a; margin:16px 0 4px;">Monthly Usage Pattern</h4>
-    <p style="font-size:12px; color:#94a3b8; margin-bottom:8px;">Blue = near baseload, Amber = weather-driven usage above baseline</p>
+    <h4 style="font-family:'DM Serif Display',serif; font-size:15px; font-weight:400; color:#1C1C1A; margin:16px 0 4px;">Monthly Usage Pattern</h4>
+    <p style="font-size:12px; color:#9A9A92; margin-bottom:8px;">Dark = near baseload, Amber = weather-driven usage above baseline</p>
     ${usageChart}
 
     <!-- Anomalies -->
     ${anomalies.length > 0 ? `
-    <h4 style="font-size:15px; color:#0f172a; margin:16px 0 8px;">What We Found</h4>
+    <h4 style="font-family:'DM Serif Display',serif; font-size:15px; font-weight:400; color:#1C1C1A; margin:16px 0 8px;">What We Found</h4>
     ${anomaliesHtml}
     ` : ''}
   </div>

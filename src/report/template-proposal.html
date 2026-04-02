@@ -1,44 +1,59 @@
 <div class="report">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap');
+
     .report {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       max-width: 800px;
       margin: 0 auto;
-      color: #0f172a;
+      color: #1C1C1A;
       line-height: 1.6;
     }
 
     /* Verdict banner */
     .verdict-banner {
       padding: 32px;
-      border-radius: 16px;
+      border-radius: 12px;
       margin-bottom: 24px;
       text-align: center;
     }
-    .verdict-banner.bad-deal { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: #fff; }
-    .verdict-banner.below-average { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; }
-    .verdict-banner.average { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #fff; }
-    .verdict-banner.fair { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #fff; }
+    .verdict-banner.bad-deal { background: #C53030; color: #fff; }
+    .verdict-banner.below-average { background: #D97706; color: #fff; }
+    .verdict-banner.average { background: #1C1C1A; color: #FAFAF7; }
+    .verdict-banner.fair { background: #3D7A4A; color: #fff; }
 
-    .verdict-label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.9; margin-bottom: 4px; }
-    .verdict-text { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
-    .verdict-sub { font-size: 15px; opacity: 0.9; }
+    .verdict-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      opacity: 0.7;
+      margin-bottom: 8px;
+    }
+    .verdict-text {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+    .verdict-sub { font-size: 14px; opacity: 0.8; }
 
     /* Cards */
     .card {
-      background: #fff;
-      border: 1px solid #e2e8f0;
+      background: #FFFFFF;
+      border: 1px solid #E8E6E1;
       border-radius: 12px;
       padding: 24px;
       margin-bottom: 16px;
     }
     .card-title {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #64748b;
+      font-family: 'DM Serif Display', serif;
+      font-size: 15px;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      color: #1C1C1A;
       margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #E8E6E1;
     }
 
     /* Comparison table */
@@ -49,24 +64,25 @@
     .compare-table th {
       text-align: left;
       padding: 10px 12px;
-      font-size: 12px;
+      font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      color: #64748b;
-      border-bottom: 2px solid #e2e8f0;
+      color: #7A7A72;
+      border-bottom: 2px solid #E8E6E1;
     }
     .compare-table th:nth-child(2), .compare-table th:nth-child(3) { text-align: right; }
     .compare-table td {
       padding: 12px;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid #F3F2EF;
       font-size: 15px;
+      color: #3D3D3A;
     }
-    .compare-table td:nth-child(2) { text-align: right; color: #64748b; }
-    .compare-table td:nth-child(3) { text-align: right; color: #0f172a; font-weight: 600; }
+    .compare-table td:nth-child(2) { text-align: right; color: #7A7A72; }
+    .compare-table td:nth-child(3) { text-align: right; color: #1C1C1A; font-weight: 600; }
     .compare-table tr:last-child td { border-bottom: none; }
-    .row-highlight td { background: #f0fdf4; }
-    .savings-amount { color: #16a34a; font-weight: 700; }
-    .warning-amount { color: #dc2626; font-weight: 600; }
+    .row-highlight td { background: #F7F5F0; }
+    .savings-amount { color: #3D7A4A; font-weight: 700; }
+    .warning-amount { color: #C53030; font-weight: 600; }
 
     /* Issues list */
     .issue {
@@ -76,9 +92,9 @@
       font-size: 14px;
       line-height: 1.5;
     }
-    .issue.high { background: #fef2f2; border-left: 4px solid #dc2626; }
-    .issue.medium { background: #fffbeb; border-left: 4px solid #f59e0b; }
-    .issue.low { background: #f0fdf4; border-left: 4px solid #22c55e; }
+    .issue.high { background: #FDF2F2; border-left: 4px solid #C53030; }
+    .issue.medium { background: #FDF8EF; border-left: 4px solid #D97706; }
+    .issue.low { background: #F0F7F2; border-left: 4px solid #3D7A4A; }
     .issue-label {
       font-weight: 700;
       font-size: 11px;
@@ -86,32 +102,41 @@
       letter-spacing: 0.05em;
       margin-bottom: 4px;
     }
-    .issue.high .issue-label { color: #dc2626; }
-    .issue.medium .issue-label { color: #d97706; }
-    .issue.low .issue-label { color: #16a34a; }
+    .issue.high .issue-label { color: #C53030; }
+    .issue.medium .issue-label { color: #D97706; }
+    .issue.low .issue-label { color: #3D7A4A; }
 
     /* Big number */
     .big-number {
       text-align: center;
       padding: 20px;
     }
-    .big-number .value { font-size: 42px; font-weight: 700; }
-    .big-number .value.savings { color: #16a34a; }
-    .big-number .value.cost { color: #dc2626; }
-    .big-number .label { font-size: 14px; color: #64748b; margin-top: 4px; }
+    .big-number .value {
+      font-family: 'DM Serif Display', serif;
+      font-size: 42px;
+      font-weight: 400;
+    }
+    .big-number .value.savings { color: #3D7A4A; }
+    .big-number .value.cost { color: #C53030; }
+    .big-number .label { font-size: 14px; color: #7A7A72; margin-top: 4px; }
 
     /* Grid */
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
     .stat-card {
-      background: #f8fafc;
+      background: #F3F2EF;
       border-radius: 8px;
       padding: 16px;
       text-align: center;
     }
-    .stat-card .value { font-size: 24px; font-weight: 700; color: #0f172a; }
-    .stat-card .value.green { color: #16a34a; }
-    .stat-card .label { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .stat-card .value {
+      font-family: 'DM Serif Display', serif;
+      font-size: 24px;
+      font-weight: 400;
+      color: #1C1C1A;
+    }
+    .stat-card .value.green { color: #3D7A4A; }
+    .stat-card .label { font-size: 12px; color: #7A7A72; margin-top: 4px; }
 
     /* Battery section */
     .battery-tag {
@@ -121,24 +146,29 @@
       font-size: 12px;
       font-weight: 600;
     }
-    .battery-tag.yes { background: #dcfce7; color: #16a34a; }
-    .battery-tag.no { background: #f1f5f9; color: #64748b; }
+    .battery-tag.yes { background: #E8F5EC; color: #3D7A4A; }
+    .battery-tag.no { background: #F3F2EF; color: #7A7A72; }
 
     /* CTA */
     .cta-card {
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      color: #fff;
+      background: #1C1C1A;
+      color: #FAFAF7;
       border-radius: 12px;
       padding: 28px;
       text-align: center;
       margin-top: 24px;
     }
-    .cta-card h3 { font-size: 20px; margin-bottom: 8px; }
-    .cta-card p { opacity: 0.85; font-size: 15px; margin-bottom: 16px; }
+    .cta-card h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+    .cta-card p { opacity: 0.7; font-size: 14px; margin-bottom: 16px; }
     .cta-btn {
       display: inline-block;
       padding: 12px 32px;
-      background: #3b82f6;
+      background: #D97706;
       color: #fff;
       border: none;
       border-radius: 8px;
@@ -151,7 +181,7 @@
     /* Footer */
     .disclaimer {
       font-size: 11px;
-      color: #94a3b8;
+      color: #9A9A92;
       margin-top: 20px;
       line-height: 1.5;
     }
@@ -255,7 +285,7 @@
         <div class="label">Payback period</div>
       </div>
     </div>
-    <p style="margin-top: 16px; font-size: 14px; color: #64748b; text-align: center;">
+    <p style="margin-top: 16px; font-size: 14px; color: #7A7A72; text-align: center;">
       {{OUR_PRODUCTION}} kWh/year estimated production &middot; No tax credit needed &middot; No hidden fees
     </p>
   </div>
@@ -266,8 +296,8 @@
     <div style="margin-bottom: 8px;">
       <span class="battery-tag {{BATTERY_TAG_CLASS}}">{{BATTERY_VERDICT}}</span>
     </div>
-    <p style="font-size: 14px; color: #475569;">{{BATTERY_SUMMARY}}</p>
-    <p style="font-size: 13px; color: #94a3b8; margin-top: 8px;">Add-on cost: ${{BATTERY_COST}} for 13.5 kWh &middot; ~{{BATTERY_PAYBACK}} year payback</p>
+    <p style="font-size: 14px; color: #5A5A52;">{{BATTERY_SUMMARY}}</p>
+    <p style="font-size: 13px; color: #9A9A92; margin-top: 8px;">Add-on cost: ${{BATTERY_COST}} for 13.5 kWh &middot; ~{{BATTERY_PAYBACK}} year payback</p>
   </div>
 
   <!-- CTA -->
