@@ -217,8 +217,8 @@ app.get('/api/ab-results', (req, res) => {
     total: { A: variantA.length, B: variantB.length },
     fromGoogleAds: { A: googleA.length, B: googleB.length },
     variants: {
-      A: { description: 'Control — no cost-answer section', leads: variantA.length },
-      B: { description: 'Treatment — with cost-answer section', leads: variantB.length },
+      A: { description: 'Upload-first page with cost table', leads: variantA.length },
+      B: { description: 'Content-first guide — "5 Things to Check" + embedded CTAs', leads: variantB.length },
     },
     note: 'To determine winner, compare conversion rates once each variant has 50+ visitors from Google Ads. Track visitors in Plausible or Google Analytics.',
   });
