@@ -64,6 +64,9 @@ addColumnIfMissing('leads', 'utm_source', 'TEXT');
 addColumnIfMissing('leads', 'utm_medium', 'TEXT');
 addColumnIfMissing('leads', 'utm_campaign', 'TEXT');
 
+// A/B test variant tracking
+addColumnIfMissing('leads', 'ab_variant', 'TEXT');
+
 // Report HTML storage in analyses
 addColumnIfMissing('analyses', 'report_html', 'TEXT');
 
@@ -72,8 +75,8 @@ try { db.exec('CREATE INDEX IF NOT EXISTS idx_leads_token ON leads(report_token)
 
 // ── Prepared statements ──────────────────────────────────────────────
 const insertLead = db.prepare(`
-  INSERT INTO leads (email, phone, mode, report_token, proposal_grade, city, system_size_kw, utm_source, utm_medium, utm_campaign, next_email_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+2 days'))
+  INSERT INTO leads (email, phone, mode, report_token, proposal_grade, city, system_size_kw, utm_source, utm_medium, utm_campaign, ab_variant, next_email_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+2 days'))
 `);
 
 const insertAnalysis = db.prepare(`
@@ -149,7 +152,8 @@ function saveLead(email, phone, mode, extra = {}) {
     extra.systemSizeKw || null,
     extra.utmSource || null,
     extra.utmMedium || null,
-    extra.utmCampaign || null
+    extra.utmCampaign || null,
+    extra.abVariant || null
   );
   console.log(`[db] Saved lead: ${email} (id: ${result.lastInsertRowid}, token: ${token.substring(0, 8)}...)`);
   return { id: result.lastInsertRowid, token };

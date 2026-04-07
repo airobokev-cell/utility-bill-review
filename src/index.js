@@ -25,9 +25,37 @@ process.on('unhandledRejection', (reason) => {
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
 
+const cookieParser = require('cookie-parser');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
+
+// ── A/B test middleware ──────────────────────────────────────────────
+// Assigns visitors to variant A (control) or B (cost-answer section)
+// Sticky via cookie so returning visitors see the same version
+app.get('/', (req, res) => {
+  let variant = req.cookies.ab_variant;
+  if (!variant || !['A', 'B'].includes(variant)) {
+    variant = Math.random() < 0.5 ? 'A' : 'B';
+    res.cookie('ab_variant', variant, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: false });
+  }
+  if (variant === 'B') {
+    // Variant B: content-first experience
+    const htmlPath = path.join(__dirname, '..', 'public', 'index-b.html');
+    const html = fs.readFileSync(htmlPath, 'utf8');
+    res.send(html);
+  } else {
+    // Variant A: current page with cost-answer section
+    const htmlPath = path.join(__dirname, '..', 'public', 'index.html');
+    let html = fs.readFileSync(htmlPath, 'utf8');
+    const variantScript = `<script>window.__AB_VARIANT = "${variant}";</script>`;
+    html = html.replace('</head>', variantScript + '\n</head>');
+    res.send(html);
+  }
+});
+
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Health check endpoint
@@ -149,13 +177,14 @@ function extractLeadMeta(mode, analysisData) {
 
 // ── Lead storage (SQLite) ───────────────────────────────────────────
 app.post('/api/capture-lead', express.json(), async (req, res) => {
-  const { email, phone, mode, analysisData, reportHtml, utmSource, utmMedium, utmCampaign } = req.body;
+  const { email, phone, mode, analysisData, reportHtml, utmSource, utmMedium, utmCampaign, abVariant } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
 
   const meta = extractLeadMeta(mode, analysisData);
   meta.utmSource = utmSource || null;
   meta.utmMedium = utmMedium || null;
   meta.utmCampaign = utmCampaign || null;
+  meta.abVariant = abVariant || null;
 
   const { id: leadId, token } = saveLead(email, phone, mode, meta);
   if (analysisData) saveAnalysis(leadId, mode, analysisData, reportHtml || null);
@@ -169,6 +198,30 @@ app.post('/api/capture-lead', express.json(), async (req, res) => {
 app.get('/api/leads', (req, res) => {
   const leads = getAllLeads();
   res.json({ success: true, count: leads.length, leads });
+});
+
+// ── A/B test results ─────────────────────────────────────────────────
+app.get('/api/ab-results', (req, res) => {
+  const auth = req.headers.authorization;
+  const expected = 'Basic ' + Buffer.from((process.env.ADMIN_USER || 'admin') + ':' + (process.env.ADMIN_PASS || 'changeme')).toString('base64');
+  if (auth !== expected) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Admin"');
+    return res.status(401).send('Unauthorized');
+  }
+  const leads = getAllLeads();
+  const variantA = leads.filter(l => l.ab_variant === 'A');
+  const variantB = leads.filter(l => l.ab_variant === 'B');
+  const googleA = variantA.filter(l => l.utm_source === 'google');
+  const googleB = variantB.filter(l => l.utm_source === 'google');
+  res.json({
+    total: { A: variantA.length, B: variantB.length },
+    fromGoogleAds: { A: googleA.length, B: googleB.length },
+    variants: {
+      A: { description: 'Control — no cost-answer section', leads: variantA.length },
+      B: { description: 'Treatment — with cost-answer section', leads: variantB.length },
+    },
+    note: 'To determine winner, compare conversion rates once each variant has 50+ visitors from Google Ads. Track visitors in Plausible or Google Analytics.',
+  });
 });
 
 // ── Admin endpoint (basic auth) ────────────────────────────────────
@@ -188,8 +241,8 @@ app.get('/admin/leads', (req, res) => {
     .stat{display:inline-block;background:#E8F5EC;padding:8px 16px;border-radius:8px;margin-right:12px;font-weight:600}</style></head>
     <body><h1>Leads Dashboard</h1>
     <p><span class="stat">${total} total leads</span></p>
-    <table><thead><tr><th>ID</th><th>Email</th><th>Phone</th><th>Mode</th><th>Grade</th><th>City</th><th>Source</th><th>Step</th><th>Date</th></tr></thead>
-    <tbody>${leads.map(l => `<tr><td>${l.id}</td><td>${l.email}</td><td>${l.phone || '-'}</td><td>${l.mode || '-'}</td><td>${l.proposal_grade || '-'}</td><td>${l.city || '-'}</td><td>${l.utm_source || 'organic'}</td><td>${l.email_sequence_step || 1}</td><td>${l.created_at}</td></tr>`).join('')}</tbody></table></body></html>`;
+    <table><thead><tr><th>ID</th><th>Email</th><th>Phone</th><th>Mode</th><th>Grade</th><th>City</th><th>Source</th><th>Variant</th><th>Step</th><th>Date</th></tr></thead>
+    <tbody>${leads.map(l => `<tr><td>${l.id}</td><td>${l.email}</td><td>${l.phone || '-'}</td><td>${l.mode || '-'}</td><td>${l.proposal_grade || '-'}</td><td>${l.city || '-'}</td><td>${l.utm_source || 'organic'}</td><td>${l.ab_variant || '-'}</td><td>${l.email_sequence_step || 1}</td><td>${l.created_at}</td></tr>`).join('')}</tbody></table></body></html>`;
   res.send(html);
 });
 

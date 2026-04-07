@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "solar-analyzer",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["src/index.js"],
-      "port": 3002
+      "runtimeExecutable": "/opt/homebrew/bin/npm",
+      "runtimeArgs": ["start"],
+      "port": 3002,
+      "cwd": "/Users/airobokev/Documents/solar-savings"
     }
   ]
 }
