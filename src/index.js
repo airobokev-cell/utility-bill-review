@@ -1,11 +1,11 @@
 const path = require('path');
 const fs = require('fs');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env'), override: true });
+require('dotenv').config({ path: path.join(__dirname, '..', '.env'), override: false });
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { PORT, MAX_FILE_SIZE } = require('./constants');
-const { analyzeBill, analyzeProposal, analyzeBoth } = require('./pipeline/orchestrator');
+const { analyzeBill, analyzeProposal, analyzeBoth, analyzeHaveSolar } = require('./pipeline/orchestrator');
 const {
   saveLead, getAllLeads, getTotalLeadCount, saveAnalysis,
   findLeadByToken, getLeadsDueForEmail, advanceLeadEmail,
@@ -74,6 +74,17 @@ app.get('/solar-red-flags', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'solar-red-flags.html'));
 });
 
+// ── Programmatic city pages ───────────────────────────────────────────
+app.get('/solar-boulder-co', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'solar-boulder-co.html'));
+});
+app.get('/solar-denver-co', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'solar-denver-co.html'));
+});
+app.get('/solar-fort-collins-co', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'solar-fort-collins-co.html'));
+});
+
 // ── Persistent report URL ─────────────────────────────────────────────
 app.get('/report/:token', (req, res) => {
   const lead = findLeadByToken(req.params.token);
@@ -135,6 +146,27 @@ const upload = multer({
     }
   },
 });
+
+// Have-solar upload: bill PDF + production (PDF or image screenshot) + optional proposal PDF.
+// We accept images on the `production` field only — bill and proposal stay PDF-only.
+const haveSolarUpload = multer({
+  storage,
+  limits: { fileSize: MAX_FILE_SIZE },
+  fileFilter: (req, file, cb) => {
+    if (file.fieldname === 'production') {
+      const ok = file.mimetype === 'application/pdf'
+        || /^image\/(png|jpeg|jpg|webp|gif)$/i.test(file.mimetype);
+      if (ok) return cb(null, true);
+      return cb(new Error('Production must be a PDF or image (PNG/JPG/WebP)'));
+    }
+    if (file.mimetype === 'application/pdf') return cb(null, true);
+    cb(new Error('Only PDF files are accepted for this field'));
+  },
+}).fields([
+  { name: 'bill', maxCount: 1 },
+  { name: 'production', maxCount: 1 },
+  { name: 'proposal', maxCount: 1 },
+]);
 
 // Helper: create abort controller linked to client disconnect
 function createLinkedAbort(req, res) {
@@ -365,6 +397,69 @@ app.post('/api/analyze-both', bothUpload, async (req, res) => {
     }
   } finally {
     await cleanupFiles(billFile?.path, proposalFile?.path);
+  }
+});
+
+// ── Route: Analyze have-solar (owners tracking actual savings) ───────
+app.post('/api/analyze-have-solar', haveSolarUpload, async (req, res) => {
+  const billFile = req.files?.bill?.[0];
+  const productionFile = req.files?.production?.[0];
+  const proposalFile = req.files?.proposal?.[0]; // optional
+
+  if (!billFile || !productionFile) {
+    await cleanupFiles(billFile?.path, productionFile?.path, proposalFile?.path);
+    return res.status(400).json({ error: 'Both a utility bill (PDF) and solar production data (PDF or screenshot) are required' });
+  }
+
+  console.log(`[server] Have-solar: bill=${billFile.originalname}, production=${productionFile.originalname}${proposalFile ? `, proposal=${proposalFile.originalname}` : ''}`);
+
+  const formInput = {
+    installYear: parseInt(req.body.installYear) || null,
+    systemSizeKw: parseFloat(req.body.systemSizeKw) || null,
+    ownershipType: (req.body.ownershipType === 'tpo') ? 'tpo' : 'owned',
+    inverterBrand: req.body.inverterBrand || null,
+    ppaRatePerKwh: parseFloat(req.body.ppaRatePerKwh) || 0,
+    ppaEscalatorPct: parseFloat(req.body.ppaEscalatorPct) || 0,
+  };
+
+  const abortController = createLinkedAbort(req, res);
+  try {
+    const result = await analyzeHaveSolar({
+      billPdfPath: billFile.path,
+      productionFilePath: productionFile.path,
+      proposalPdfPath: proposalFile?.path,
+      formInput,
+      signal: abortController.signal,
+    });
+    const teaser = generateTeaser('have-solar', result);
+    if (!res.headersSent) {
+      res.json({
+        success: true,
+        report: result.html,
+        teaser,
+        mode: 'have-solar',
+        analysisData: {
+          billData: result.billData,
+          productionData: result.productionData,
+          proposalData: result.proposalData,
+          actualSavings: result.actualSavings,
+          promisedVsReality: result.promisedVsReality,
+          guaranteeEvaluation: result.guaranteeEvaluation,
+          claimLetter: result.claimLetter,
+          formInput,
+        },
+        location: { lat: result.lat, lon: result.lon },
+      });
+    }
+  } catch (err) {
+    if (abortController.signal.aborted) {
+      console.log('[server] Have-solar pipeline aborted');
+    } else if (!res.headersSent) {
+      console.error('[server] Have-solar analysis failed:', err.stack || err.message);
+      res.status(500).json({ error: err.message });
+    }
+  } finally {
+    await cleanupFiles(billFile?.path, productionFile?.path, proposalFile?.path);
   }
 });
 

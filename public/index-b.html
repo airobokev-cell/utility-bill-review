@@ -510,6 +510,7 @@
           <button class="tab active" data-mode="proposal" type="button">I have a solar quote</button>
           <button class="tab" data-mode="bill" type="button">I have my electric bill</button>
           <button class="tab" data-mode="both" type="button">I have both</button>
+          <button class="tab" data-mode="have-solar" type="button">Already have solar — calc my savings so far</button>
         </div>
 
         <!-- Proposal upload -->
@@ -575,6 +576,99 @@
               <div class="file-selected hidden">
                 <span class="file-name"></span>
                 <button class="clear-btn" type="button">&times;</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Have-solar upload (post-install) -->
+        <div id="upload-have-solar" class="upload-area hidden">
+          <p class="drop-sub" style="margin:0 0 12px;color:#64748b;">Upload what you have. The more bills and production data you include, the tighter the number.</p>
+          <div class="dual-upload">
+            <div class="dual-box">
+              <div class="drop-zone small" data-target="have-solar-bill-input">
+                <input type="file" id="have-solar-bill-input" accept=".pdf" hidden>
+                <div class="drop-content">
+                  <div class="drop-icon small"><svg width="24" height="24"><use href="#icon-bolt"/></svg></div>
+                  <p><strong>Utility bill</strong> <span style="color:#dc2626;">*</span></p>
+                  <p class="drop-sub" style="font-size:12px;">PDF — most recent or a 12-month history</p>
+                  <button class="browse-btn" type="button">Browse</button>
+                </div>
+              </div>
+              <div class="file-selected hidden">
+                <span class="file-name"></span>
+                <button class="clear-btn" type="button">&times;</button>
+              </div>
+            </div>
+            <div class="dual-box">
+              <div class="drop-zone small" data-target="have-solar-production-input">
+                <input type="file" id="have-solar-production-input" accept=".pdf,.png,.jpg,.jpeg,.webp" hidden>
+                <div class="drop-content">
+                  <div class="drop-icon small"><svg width="24" height="24"><use href="#icon-document-up"/></svg></div>
+                  <p><strong>Solar production</strong> <span style="color:#dc2626;">*</span></p>
+                  <p class="drop-sub" style="font-size:12px;">PDF export or screenshot from Enphase, SolarEdge, Tesla, etc.</p>
+                  <button class="browse-btn" type="button">Browse</button>
+                </div>
+              </div>
+              <div class="file-selected hidden">
+                <span class="file-name"></span>
+                <button class="clear-btn" type="button">&times;</button>
+              </div>
+            </div>
+          </div>
+          <div class="dual-box" style="margin-top:12px;">
+            <div class="drop-zone small" data-target="have-solar-proposal-input">
+              <input type="file" id="have-solar-proposal-input" accept=".pdf" hidden>
+              <div class="drop-content">
+                <div class="drop-icon small"><svg width="24" height="24"><use href="#icon-document-up"/></svg></div>
+                <p><strong>Original sales proposal</strong> <span style="color:#94a3b8;font-weight:400;font-size:12px;">(optional — enables promised-vs-reality + guarantee check)</span></p>
+                <button class="browse-btn" type="button">Browse</button>
+              </div>
+            </div>
+            <div class="file-selected hidden">
+              <span class="file-name"></span>
+              <button class="clear-btn" type="button">&times;</button>
+            </div>
+          </div>
+
+          <div class="home-details-fields" style="margin-top:16px;">
+            <p class="home-details-desc">Tell us about your system so we can calculate expected production correctly.</p>
+            <div class="home-details-grid">
+              <div class="field-group">
+                <label for="hs-install-year">Install year <span style="color:#dc2626;">*</span></label>
+                <input type="number" id="hs-install-year" placeholder="e.g. 2022" min="2000" max="2026" required>
+              </div>
+              <div class="field-group">
+                <label for="hs-system-size">System size (kW)</label>
+                <input type="number" id="hs-system-size" placeholder="e.g. 8.4" min="1" max="40" step="0.1">
+              </div>
+              <div class="field-group">
+                <label for="hs-inverter">Inverter brand</label>
+                <select id="hs-inverter">
+                  <option value="">--</option>
+                  <option value="enphase">Enphase</option>
+                  <option value="solaredge">SolarEdge</option>
+                  <option value="tesla">Tesla</option>
+                  <option value="sunpower">SunPower</option>
+                  <option value="sma">SMA</option>
+                  <option value="generac">Generac / PWRcell</option>
+                  <option value="other">Other / not sure</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="hs-ownership">Do you own the system?</label>
+                <select id="hs-ownership">
+                  <option value="owned">Yes — I own it (loan or cash)</option>
+                  <option value="tpo">No — it's a lease or PPA</option>
+                </select>
+              </div>
+              <div class="field-group" id="hs-ppa-group" style="display:none;">
+                <label for="hs-ppa-rate">PPA / lease rate ($/kWh)</label>
+                <input type="number" id="hs-ppa-rate" placeholder="e.g. 0.14" min="0" max="1" step="0.001">
+              </div>
+              <div class="field-group" id="hs-escalator-group" style="display:none;">
+                <label for="hs-ppa-escalator">Annual escalator (%)</label>
+                <input type="number" id="hs-ppa-escalator" placeholder="e.g. 2.9" min="0" max="10" step="0.1">
               </div>
             </div>
           </div>
@@ -798,7 +892,11 @@
 
     // ── State ──────────────────────────────────────────────────────────
     let currentMode = 'proposal';
-    let files = { proposal: null, bill: null, 'both-proposal': null, 'both-bill': null };
+    let files = {
+      proposal: null, bill: null,
+      'both-proposal': null, 'both-bill': null,
+      'have-solar-bill': null, 'have-solar-production': null, 'have-solar-proposal': null,
+    };
     let currentAbortController = null;
     let pendingFullReport = null;
     let pendingTeaser = null;
@@ -812,6 +910,7 @@
     const uploadProposal = document.getElementById('upload-proposal');
     const uploadBill = document.getElementById('upload-bill');
     const uploadBoth = document.getElementById('upload-both');
+    const uploadHaveSolar = document.getElementById('upload-have-solar');
     const analyzeBtn = document.getElementById('analyze-btn');
     const uploadSection = document.getElementById('upload-section');
     const loadingSection = document.getElementById('loading-section');
@@ -833,9 +932,25 @@
     function updateHomeDetailsVisibility() {
       const homeDetails = document.getElementById('home-details');
       if (homeDetails) {
-        homeDetails.classList.toggle('hidden', currentMode === 'proposal');
+        const show = currentMode === 'bill' || currentMode === 'both';
+        homeDetails.classList.toggle('hidden', !show);
       }
     }
+
+    // Toggle PPA fields when ownership changes
+    const ownershipSelect = document.getElementById('hs-ownership');
+    if (ownershipSelect) {
+      const toggleTpo = () => {
+        const isTpo = ownershipSelect.value === 'tpo';
+        document.getElementById('hs-ppa-group').style.display = isTpo ? '' : 'none';
+        document.getElementById('hs-escalator-group').style.display = isTpo ? '' : 'none';
+      };
+      ownershipSelect.addEventListener('change', toggleTpo);
+      toggleTpo();
+    }
+
+    const hsInstallYear = document.getElementById('hs-install-year');
+    if (hsInstallYear) hsInstallYear.addEventListener('input', () => updateAnalyzeButton());
 
     // ── Tab switching ──────────────────────────────────────────────────
     tabs.forEach((tab) => {
@@ -847,6 +962,7 @@
         uploadProposal.classList.toggle('hidden', currentMode !== 'proposal');
         uploadBill.classList.toggle('hidden', currentMode !== 'bill');
         uploadBoth.classList.toggle('hidden', currentMode !== 'both');
+        if (uploadHaveSolar) uploadHaveSolar.classList.toggle('hidden', currentMode !== 'have-solar');
         updateAnalyzeButton();
         updateHomeDetailsVisibility();
       });
@@ -877,9 +993,11 @@
         e.preventDefault();
         zone.classList.remove('dragover');
         const file = e.dataTransfer.files[0];
-        if (file && file.type === 'application/pdf') {
-          selectFile(fileKey, file, fileSelected, fileNameEl);
-        }
+        if (!file) return;
+        const allowImage = fileKey === 'have-solar-production';
+        const ok = file.type === 'application/pdf'
+          || (allowImage && /^image\/(png|jpeg|webp|gif)$/i.test(file.type));
+        if (ok) selectFile(fileKey, file, fileSelected, fileNameEl);
       });
 
       if (clearBtn) {
@@ -904,6 +1022,10 @@
       if (currentMode === 'proposal') ready = !!files.proposal;
       if (currentMode === 'bill') ready = !!files.bill;
       if (currentMode === 'both') ready = !!files['both-proposal'] && !!files['both-bill'];
+      if (currentMode === 'have-solar') {
+        const installYear = document.getElementById('hs-install-year')?.value;
+        ready = !!files['have-solar-bill'] && !!files['have-solar-production'] && !!installYear;
+      }
       analyzeBtn.classList.toggle('hidden', !ready);
     }
 
@@ -924,6 +1046,7 @@
         proposal: ['Reading your solar proposal...', 'Extracting pricing and system details...', 'Checking production estimates...', 'Scoring your deal...', 'Building your report...'],
         bill: ['Reading your electric bill...', 'Extracting usage and rates...', 'Analyzing your home energy efficiency...', 'Analyzing your roof...', 'Estimating solar production...', 'Calculating your savings...', 'Building your report...'],
         both: ['Reading both documents...', 'Extracting all the details...', 'Analyzing your home energy efficiency...', 'Analyzing your roof and usage...', 'Comparing their quote to ours...', 'Building your full report...'],
+        'have-solar': ['Reading your utility bill...', 'Reading your solar production data...', 'Extracting rates and consumption...', 'Computing expected production for your location...', 'Comparing actual vs expected...', 'Calculating your savings so far...', 'Checking for guarantee claims...', 'Building your report...'],
       };
 
       let statusIdx = 0;
@@ -945,6 +1068,24 @@
           endpoint = '/api/analyze-bill';
           formData = new FormData();
           formData.append('bill', files.bill);
+        } else if (currentMode === 'have-solar') {
+          endpoint = '/api/analyze-have-solar';
+          formData = new FormData();
+          formData.append('bill', files['have-solar-bill']);
+          formData.append('production', files['have-solar-production']);
+          if (files['have-solar-proposal']) formData.append('proposal', files['have-solar-proposal']);
+          const installYear = document.getElementById('hs-install-year')?.value;
+          const systemSizeKw = document.getElementById('hs-system-size')?.value;
+          const inverterBrand = document.getElementById('hs-inverter')?.value;
+          const ownershipType = document.getElementById('hs-ownership')?.value || 'owned';
+          const ppaRatePerKwh = document.getElementById('hs-ppa-rate')?.value;
+          const ppaEscalatorPct = document.getElementById('hs-ppa-escalator')?.value;
+          if (installYear) formData.append('installYear', installYear);
+          if (systemSizeKw) formData.append('systemSizeKw', systemSizeKw);
+          if (inverterBrand) formData.append('inverterBrand', inverterBrand);
+          if (ownershipType) formData.append('ownershipType', ownershipType);
+          if (ppaRatePerKwh) formData.append('ppaRatePerKwh', ppaRatePerKwh);
+          if (ppaEscalatorPct) formData.append('ppaEscalatorPct', ppaEscalatorPct);
         } else {
           endpoint = '/api/analyze-both';
           formData = new FormData();
@@ -1049,7 +1190,7 @@
 
       window._capturedEmail = email;
 
-      if (pendingLocation && pendingLocation.lat && pendingLocation.lon) {
+      if (pendingLocation && pendingLocation.lat && pendingLocation.lon && pendingMode !== 'have-solar') {
         const designerSection = document.getElementById('panel-designer-section');
         designerSection.classList.remove('hidden');
 
@@ -1071,7 +1212,7 @@
         });
       }
 
-      if (pendingAnalysisData) {
+      if (pendingAnalysisData && pendingMode !== 'have-solar') {
         const dlBar = document.createElement('div');
         dlBar.className = 'excel-download-bar';
         dlBar.innerHTML = `

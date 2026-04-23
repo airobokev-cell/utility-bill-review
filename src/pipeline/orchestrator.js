@@ -1,5 +1,6 @@
 const { parseBill } = require('./billParser');
 const { parseProposal } = require('./proposalParser');
+const { parseProduction } = require('./productionParser');
 const { scoreProposal } = require('./proposalScorer');
 const { geocodeAddress } = require('./geocoder');
 const { analyzeRoof } = require('./roofAnalysis');
@@ -8,7 +9,10 @@ const { extractCurrentRates, getPostSolarRates, calculateTOUImpact } = require('
 const { calculateIncentives } = require('./incentives');
 const { analyzeBatteryValue } = require('./batteryAnalysis');
 const { calculateSavings, estimateAnnualConsumption, calculateSystemSize } = require('./savingsCalculator');
+const { computeActualSavings, computePromisedVsReality } = require('./actualSavings');
+const { evaluateGuarantee, draftClaimLetter } = require('./guaranteeClaim');
 const { generateReport } = require('../report/generator');
+const { generateHaveSolarReport } = require('../report/haveSolarReport');
 const { SYSTEM_COST_PER_WATT, ANNUAL_RATE_ESCALATION, XCEL_FLAT_RATE } = require('../constants');
 const { defaultVerification, buildVerificationResult } = require('./verification');
 const { lookupWhitepages } = require('./whitepages');
@@ -345,4 +349,122 @@ async function analyzeBoth(billPdfPath, proposalPdfPath, signal) {
   return { html: reportHtml, billData, proposalData, score, savingsResult, lat, lon, roofData, touImpact, efficiencyAnalysis };
 }
 
-module.exports = { analyzeBill, analyzeProposal, analyzeBoth };
+/**
+ * Analyze a homeowner who ALREADY has solar — figure out what they've actually
+ * saved, how the system is performing vs expected, compare to the original
+ * proposal if provided, and surface a guarantee claim if eligible.
+ */
+async function analyzeHaveSolar({
+  billPdfPath,
+  productionFilePath,
+  proposalPdfPath,
+  formInput,
+  signal,
+}) {
+  console.log('[orchestrator] Starting have-solar analysis...');
+  console.log('[orchestrator] Form input:', JSON.stringify(formInput));
+
+  // Step 1: Parse bill + production (+ proposal) in parallel
+  throwIfAborted(signal);
+  console.log('[orchestrator] Step 1: Parsing uploaded documents...');
+  const parsePromises = [
+    parseBill(billPdfPath, signal),
+    parseProduction(productionFilePath, signal),
+  ];
+  if (proposalPdfPath) {
+    parsePromises.push(parseProposal(proposalPdfPath, signal));
+  }
+  const parsed = await Promise.all(parsePromises);
+  const billData = parsed[0];
+  const productionData = parsed[1];
+  const proposalData = proposalPdfPath ? parsed[2] : null;
+
+  // Step 2: Current rate structure from the bill
+  throwIfAborted(signal);
+  console.log('[orchestrator] Step 2: Extracting current rate structure...');
+  const currentRates = extractCurrentRates(billData);
+
+  // Step 3: Geocode for PVWatts
+  throwIfAborted(signal);
+  console.log('[orchestrator] Step 3: Geocoding address...');
+  const { lat, lon } = await geocodeAddress(
+    billData.customer.address,
+    billData.customer.city,
+    billData.customer.state,
+    billData.customer.zip,
+    signal
+  );
+
+  // Step 4: Expected production (new-system baseline, pre-derate)
+  throwIfAborted(signal);
+  console.log('[orchestrator] Step 4: Computing expected production (PVWatts)...');
+  // Fall back to bill-history consumption for sizing if user didn't supply system size
+  let systemKw = Number(formInput?.systemSizeKw) || null;
+  if (!systemKw) {
+    systemKw = Number(productionData.systemSizeKw) || null;
+  }
+  if (!systemKw) {
+    // Rough sizing from 12-month imports
+    const consumption = estimateAnnualConsumption(billData, null);
+    const kwhPerKw = lat > 40 ? 1250 : lat > 35 ? 1400 : 1550;
+    systemKw = Math.max(4, Math.min(15, consumption.annualConsumption / kwhPerKw));
+    console.log(`[orchestrator] No system size provided — estimating at ${systemKw.toFixed(1)} kW`);
+  }
+  const expectedProduction = await estimateProduction(lat, lon, systemKw, signal);
+
+  // Step 5: Actual savings
+  throwIfAborted(signal);
+  console.log('[orchestrator] Step 5: Computing actual savings...');
+  const actualSavings = computeActualSavings({
+    billData,
+    productionData,
+    currentRates,
+    formInput,
+    expectedAnnualKwhUnderated: expectedProduction.acAnnual,
+  });
+
+  // Step 6: Promised vs reality (if proposal uploaded)
+  const promisedVsReality = computePromisedVsReality({ proposalData, actualSavings });
+
+  // Step 7: Guarantee check + claim letter (if eligible)
+  const guaranteeEvaluation = evaluateGuarantee({ proposalData, actualSavings, billData });
+  const claimLetter = draftClaimLetter({
+    evaluation: guaranteeEvaluation,
+    proposalData,
+    billData,
+    formInput,
+  });
+
+  // Step 8: Render report
+  throwIfAborted(signal);
+  console.log('[orchestrator] Step 6: Rendering have-solar report...');
+  const html = generateHaveSolarReport({
+    billData,
+    productionData,
+    proposalData,
+    currentRates,
+    actualSavings,
+    promisedVsReality,
+    guaranteeEvaluation,
+    claimLetter,
+  });
+
+  console.log('[orchestrator] Have-solar analysis complete.');
+  return {
+    html,
+    billData,
+    productionData,
+    proposalData,
+    currentRates,
+    actualSavings,
+    promisedVsReality,
+    guaranteeEvaluation,
+    claimLetter,
+    lat,
+    lon,
+    systemKw,
+    expectedProduction,
+  };
+}
+
+module.exports = { analyzeBill, analyzeProposal, analyzeBoth, analyzeHaveSolar };

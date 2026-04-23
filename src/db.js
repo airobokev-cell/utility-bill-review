@@ -67,6 +67,14 @@ addColumnIfMissing('leads', 'utm_campaign', 'TEXT');
 // A/B test variant tracking
 addColumnIfMissing('leads', 'ab_variant', 'TEXT');
 
+// Have-solar mode enrichment (post-install owners)
+addColumnIfMissing('leads', 'has_solar_installed', 'INTEGER DEFAULT 0');
+addColumnIfMissing('leads', 'ownership_type', 'TEXT');       // 'owned' | 'tpo'
+addColumnIfMissing('leads', 'install_year', 'INTEGER');
+addColumnIfMissing('leads', 'inverter_brand', 'TEXT');
+addColumnIfMissing('leads', 'ppa_rate_per_kwh', 'REAL');
+addColumnIfMissing('leads', 'ppa_escalator_pct', 'REAL');
+
 // Report HTML storage in analyses
 addColumnIfMissing('analyses', 'report_html', 'TEXT');
 

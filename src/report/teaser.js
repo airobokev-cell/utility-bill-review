@@ -1,4 +1,5 @@
 const { SYSTEM_COST_PER_WATT } = require('../constants');
+const { generateHaveSolarTeaser } = require('./haveSolarReport');
 
 /**
  * Generate a teaser HTML snippet shown BEFORE the email gate.
@@ -6,6 +7,9 @@ const { SYSTEM_COST_PER_WATT } = require('../constants');
  * but not so complete that they don't need to give their email.
  */
 function generateTeaser(mode, result) {
+  if (mode === 'have-solar') {
+    return generateHaveSolarTeaser(result);
+  }
   if (mode === 'proposal' || mode === 'combined') {
     return generateProposalTeaser(result);
   } else {
