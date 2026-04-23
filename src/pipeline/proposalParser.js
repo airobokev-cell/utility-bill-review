@@ -112,32 +112,48 @@ async function parseProposal(pdfPath, signal) {
   }
 
   try {
-    const response = await client.messages.create(
-      {
-        model: CLAUDE_MODEL,
-        max_tokens: 4096,
-        messages: [
+    let response;
+    let lastErr;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        response = await client.messages.create(
           {
-            role: 'user',
-            content: [
+            model: CLAUDE_MODEL,
+            max_tokens: 4096,
+            messages: [
               {
-                type: 'document',
-                source: {
-                  type: 'base64',
-                  media_type: 'application/pdf',
-                  data: base64Pdf,
-                },
-              },
-              {
-                type: 'text',
-                text: PROPOSAL_EXTRACTION_PROMPT,
+                role: 'user',
+                content: [
+                  {
+                    type: 'document',
+                    source: {
+                      type: 'base64',
+                      media_type: 'application/pdf',
+                      data: base64Pdf,
+                    },
+                  },
+                  {
+                    type: 'text',
+                    text: PROPOSAL_EXTRACTION_PROMPT,
+                  },
+                ],
               },
             ],
           },
-        ],
-      },
-      { signal: controller.signal }
-    );
+          { signal: controller.signal }
+        );
+        break;
+      } catch (err) {
+        lastErr = err;
+        const status = err?.status || err?.response?.status;
+        const transient = status === 429 || (status >= 500 && status < 600) || /overloaded|internal server|timeout/i.test(err?.message || '');
+        if (!transient || attempt === 3 || controller.signal.aborted) throw err;
+        const delayMs = 500 * Math.pow(2, attempt - 1);
+        console.warn(`[proposalParser] Transient error (attempt ${attempt}/3, status=${status}); retrying in ${delayMs}ms...`);
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+    }
+    if (!response) throw lastErr || new Error('Proposal parsing failed after retries');
 
     const textBlock = response.content.filter((b) => b.type === 'text').pop();
     if (!textBlock) throw new Error('No text block in Claude response');
